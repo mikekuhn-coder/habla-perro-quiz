@@ -94,7 +94,7 @@ const QUESTIONS = [
     q: (n: string) => `Cuando ${n} encuentra comida, un olor o algo interesante en el suelo...`,
     answers: [
       { t: 'Se obsesiona — no hay nada que lo pare.',                    s: { auto_ref:5, impulsos:1 } },
-      { t: 'Lo investiga un momento y sigue caminando.',                 s: { auto_ref:3, conexion:3 } },
+      { t: 'Lo olfatea un momento y sigue solo — sin buscarte.',
       { t: 'Lo ignora — no le llama mucho la atención.',                 s: { auto_ref:1, conexion:3 } },
       { t: 'Se encierra en eso completamente y te ignora por completo.', s: { auto_ref:5, conexion:1 } },
       { t: 'Lo nota, lo investiga un momento y vuelve contigo.',         s: { auto_ref:2, conexion:4 } },
