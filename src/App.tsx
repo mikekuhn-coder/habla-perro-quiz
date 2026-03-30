@@ -6,6 +6,11 @@ const WARM = '#F5F5F4';
 const DGREY = '#4A5568';
 const WA_URL = 'https://wa.me/527776101647?text=CUERNAVACA';
 
+const LOGO_NAVY  = '/01-HP-Logo-Main-Navy.png';
+const LOGO_WHITE = '/02-HP-Logo-Main-White.png';
+const CCPDT_LOGO = '/cpdt-ka-color-med.png';
+const APDT_LOGO  = '/APDT%20logo.png';
+
 const TRAITS = ['activacion','impulsos','sensibilidad','social','conexion','auto_ref'];
 const TRAIT_LABELS = ['Activación','Impulsos','Sensibilidad','Control Social','Conexión','Auto-ref.'];
 
@@ -182,14 +187,9 @@ function calcScore(answers: any[]) {
   const tot: Record<string,number> = {};
   const cnt: Record<string,number> = {};
   TRAITS.forEach(t => { tot[t] = 0; cnt[t] = 0; });
-
   answers.forEach(a => {
-    Object.entries(a.s).forEach(([t, v]) => {
-      tot[t] += v as number;
-      cnt[t]++;
-    });
+    Object.entries(a.s).forEach(([t, v]) => { tot[t] += v as number; cnt[t]++; });
   });
-
   const avg: Record<string,number> = {};
   TRAITS.forEach(t => { avg[t] = cnt[t] > 0 ? tot[t] / cnt[t] : 3; });
 
@@ -219,7 +219,9 @@ function calcScore(answers: any[]) {
 
   if (sorted[0][1] > 2.5) primary = 'genio_selectivo';
   if (!VALID_CATS.includes(primary)) primary = 'genio_selectivo';
-  if (!VALID_CATS.includes(second))  second  = 'oportunista';
+  // Fix: ensure second is always different from primary
+  if (second === primary) second = sorted.find(([cat]) => cat !== primary)?.[0] ?? 'oportunista';
+  if (!VALID_CATS.includes(second)) second = 'oportunista';
 
   return { cat: primary, cat2: second, mixed: gap < 0.5, avg };
 }
@@ -291,31 +293,96 @@ function MiniRadar({ avg }: { avg: Record<string, number> }) {
   );
 }
 
+function CredentialLogos() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+      <div style={{ padding: '14px 10px', background: 'white', borderRadius: 8, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <img src={CCPDT_LOGO} alt="CCPDT" style={{ height: 44, objectFit: 'contain' }} />
+        <div style={{ fontSize: 11, color: DGREY, lineHeight: 1.4 }}>Certificado por el consejo internacional de entrenadores profesionales</div>
+      </div>
+      <div style={{ padding: '14px 10px', background: 'white', borderRadius: 8, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <img src={APDT_LOGO} alt="APDT" style={{ height: 44, objectFit: 'contain' }} />
+        <div style={{ fontSize: 11, color: DGREY, lineHeight: 1.4 }}>Miembro de la asociación internacional de entrenadores profesionales</div>
+      </div>
+    </div>
+  );
+}
+
+function Testimonial() {
+  return (
+    <div style={{ background: 'white', borderRadius: 8, padding: '14px' }}>
+      <p style={{ fontSize: 13, color: DGREY, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 6 }}>
+        "Pensé que mi perro simplemente era difícil. Mike me explicó qué estaba pasando realmente — y en tres semanas vi la diferencia."
+      </p>
+      <p style={{ fontSize: 11, color: '#718096' }}>— Cliente Habla Perro, Cuernavaca</p>
+    </div>
+  );
+}
+
+function ResultBody({ c, dogName, avg, showRadar, restart }: { c: any; dogName: string; avg: Record<string,number>; showRadar: boolean; restart: () => void }) {
+  return (
+    <>
+      {showRadar && (
+        <div style={{ background: WARM, padding: '20px 24px' }}>
+          <p className="sec-label">Perfil de {dogName}</p>
+          <MiniRadar avg={avg} />
+          <p style={{ fontSize: 11, color: '#718096', textAlign: 'center', marginTop: 6 }}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p>
+        </div>
+      )}
+      <div style={{ padding: '20px 24px 0' }}>
+        <p className="sec-label">Lo que está pasando en realidad</p>
+        <div className="myth-box" style={{ marginBottom: 14 }}>«{c.myth}»</div>
+        <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>{c.body}</p>
+        <p className="sec-label">Lo que necesita {dogName}</p>
+        <div style={{ marginBottom: 8 }}>
+          {c.needs.map((nd: string, i: number) => (
+            <div key={i} className="need-item">
+              <span style={{ color: GREEN, fontSize: 15, flexShrink: 0 }}>✓</span>
+              <span>{nd}</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginTop: 10, marginBottom: 20 }}>{c.bridge(dogName)}</p>
+      </div>
+      <div style={{ background: NAVY, padding: '24px' }}>
+        <h3 style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta1(dogName)}</h3>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 16 }}>{c.sub1}</p>
+        <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 8 }}>Sin compromiso · Solo una conversación</p>
+      </div>
+      <div style={{ padding: '20px 24px', background: WARM }}>
+        <CredentialLogos />
+        <Testimonial />
+      </div>
+      <div style={{ padding: '24px' }}>
+        <h3 style={{ color: NAVY, fontSize: 16, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta2}</h3>
+        <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe CUERNAVACA y te cuento todo.</p>
+        <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-navy">💬 Hablar con Mike</a>
+        <button className="ghost-btn" onClick={restart} style={{ width: '100%', textAlign: 'center', marginTop: 8 }}>Empezar de nuevo</button>
+      </div>
+    </>
+  );
+}
+
 export default function App() {
-  const [screen, setScreen]   = useState('intro');
-  const [dogName, setDogName] = useState('');
-  const [qIndex, setQIndex]   = useState(0);
-  const [answers, setAnswers] = useState<any[]>([]);
-  const [sel, setSel]         = useState<number | null>(null);
+  const [screen, setScreen]     = useState('intro');
+  const [dogName, setDogName]   = useState('');
+  const [qIndex, setQIndex]     = useState(0);
+  const [answers, setAnswers]   = useState<any[]>([]);
+  const [sel, setSel]           = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
-  const [result, setResult]   = useState<any>(null);
+  const [result, setResult]     = useState<any>(null);
 
   const restart = () => {
-    setScreen('intro');
-    setDogName('');
-    setQIndex(0);
-    setAnswers([]);
-    setSel(null);
-    setProgress(0);
-    setResult(null);
+    setScreen('intro'); setDogName(''); setQIndex(0);
+    setAnswers([]); setSel(null); setProgress(0); setResult(null);
   };
 
   useEffect(() => {
     if (screen !== 'loading') return;
     let p = 0;
     const iv = setInterval(() => {
-      p += 2;
-      setProgress(p);
+      p += 2; setProgress(p);
       if (p >= 100) {
         clearInterval(iv);
         const res = calcScore(answers);
@@ -332,21 +399,18 @@ export default function App() {
       const na = [...answers, a];
       setAnswers(na);
       setSel(null);
-      if (qIndex < QUESTIONS.length - 1) {
-        setQIndex(qIndex + 1);
-      } else {
-        setScreen('loading');
-      }
+      if (qIndex < QUESTIONS.length - 1) { setQIndex(qIndex + 1); }
+      else { setScreen('loading'); }
     }, 200);
   };
 
-  // ── INTRO ──────────────────────────────────────────────────────────────────
+  // INTRO
   if (screen === 'intro') return (
     <>
       <style>{css}</style>
       <div className="app" style={{ paddingBottom: 32 }}>
-        <div style={{ background: NAVY, padding: '40px 24px 32px', textAlign: 'center' }}>
-          <div style={{ fontSize: 12, color: GREEN, fontWeight: 700, letterSpacing: '0.12em', marginBottom: 8 }}>HABLA PERRO</div>
+        <div style={{ background: NAVY, padding: '32px 24px 28px', textAlign: 'center' }}>
+          <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 56, objectFit: 'contain', marginBottom: 20 }} />
           <h1 style={{ color: 'white', fontSize: 24, fontWeight: 700, lineHeight: 1.3, marginBottom: 12 }}>¿Qué tipo de perro<br />es el tuyo?</h1>
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 1.6, maxWidth: 300, margin: '0 auto' }}>
             Responde 6 preguntas y descubre qué está pasando realmente con su comportamiento — y por dónde empezar.
@@ -354,28 +418,24 @@ export default function App() {
         </div>
         <div style={{ padding: '28px 24px' }}>
           <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: NAVY, marginBottom: 8 }}>¿Cómo se llama tu perro?</label>
-          <input
-            className="input-field"
-            type="text"
-            placeholder="Escribe su nombre..."
-            value={dogName}
+          <input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName}
             onChange={e => setDogName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && dogName.trim() && setScreen('quiz')}
-            style={{ marginBottom: 16 }}
-          />
+            style={{ marginBottom: 16 }} />
           <button className="btn-green" onClick={() => dogName.trim() && setScreen('quiz')} disabled={!dogName.trim()}>
             Empezar ahora →
           </button>
           <p style={{ textAlign: 'center', fontSize: 12, color: '#718096', marginTop: 12 }}>6 preguntas · 2 minutos · resultado inmediato</p>
-          <div style={{ marginTop: 24, padding: '14px 16px', background: WARM, borderRadius: 10, textAlign: 'center' }}>
-            <p style={{ fontSize: 12, color: DGREY, lineHeight: 1.5 }}>El único en México con certificación<br />reconocida mundialmente en entrenamiento canino.</p>
+          <div style={{ marginTop: 24, padding: '14px 16px', background: WARM, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            <img src={CCPDT_LOGO} alt="CCPDT" style={{ height: 34, objectFit: 'contain' }} />
+            <p style={{ fontSize: 12, color: DGREY, lineHeight: 1.5 }}>Certificado por el consejo internacional<br />de entrenadores profesionales</p>
           </div>
         </div>
       </div>
     </>
   );
 
-  // ── QUIZ ───────────────────────────────────────────────────────────────────
+  // QUIZ
   if (screen === 'quiz') {
     const q = QUESTIONS[qIndex];
     return (
@@ -383,12 +443,11 @@ export default function App() {
         <style>{css}</style>
         <div className="app" style={{ paddingBottom: 32 }}>
           <div style={{ background: NAVY, padding: '18px 24px 20px' }}>
-            <div style={{ minHeight: 24, marginBottom: 14 }}>
-              {qIndex > 0 && (
-                <button className="ghost-btn" style={{ color: 'rgba(255,255,255,0.6)' }} onClick={() => { setQIndex(qIndex - 1); setAnswers(answers.slice(0, -1)); }}>
-                  ← Anterior
-                </button>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, minHeight: 28 }}>
+              {qIndex > 0
+                ? <button className="ghost-btn" style={{ color: 'rgba(255,255,255,0.6)' }} onClick={() => { setQIndex(qIndex - 1); setAnswers(answers.slice(0, -1)); }}>← Anterior</button>
+                : <div />}
+              <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 26, objectFit: 'contain' }} />
             </div>
             <ProgBar n={qIndex} total={QUESTIONS.length} />
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 5, textAlign: 'right' }}>{qIndex + 1} de {QUESTIONS.length}</div>
@@ -397,8 +456,7 @@ export default function App() {
             <div style={{ fontSize: 16, fontWeight: 600, color: NAVY, lineHeight: 1.5, marginBottom: 18 }}>
               {(q as any).qHighlight
                 ? <>{q.q(dogName)} <span style={{ textDecoration: 'underline', fontWeight: 700 }}>{(q as any).qHighlight}</span>{(q as any).qSuffix}</>
-                : q.q(dogName)
-              }
+                : q.q(dogName)}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {q.answers.map((a, i) => (
@@ -416,13 +474,13 @@ export default function App() {
     );
   }
 
-  // ── LOADING ────────────────────────────────────────────────────────────────
+  // LOADING
   if (screen === 'loading') return (
     <>
       <style>{css}</style>
       <div className="app" style={{ background: NAVY, justifyContent: 'center', alignItems: 'center', padding: '40px 24px', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>🐾</div>
+          <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 48, objectFit: 'contain', marginBottom: 24 }} />
           <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 8, lineHeight: 1.4 }}>Analizando el perfil<br />de {dogName}...</h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 1.6, marginBottom: 28, maxWidth: 260, margin: '0 auto 28px' }}>
             Cada perro tiene su propio patrón. Estamos encontrando el de {dogName}.
@@ -435,45 +493,62 @@ export default function App() {
     </>
   );
 
-  // ── RESULT ─────────────────────────────────────────────────────────────────
+  // RESULT
   if (screen === 'result' && result) {
     const { cat, cat2, mixed, avg } = result;
-    const c = COPY[cat];
+    const c  = COPY[cat];
     const c2 = mixed ? COPY[cat2] : null;
-
-    // Safety guard
     if (!c) { restart(); return null; }
 
-    // Mixed profile
+    // Mixed profile — full treatment
     if (mixed && c2) return (
       <>
         <style>{css}</style>
         <div className="app" style={{ paddingBottom: 48 }}>
           <div style={{ background: NAVY, padding: '28px 24px' }}>
+            <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 36, objectFit: 'contain', marginBottom: 16 }} />
             <div style={{ display: 'inline-block', background: 'rgba(42,196,0,0.2)', border: '1px solid rgba(42,196,0,0.4)', borderRadius: 20, padding: '3px 12px', fontSize: 11, color: GREEN, fontWeight: 700, marginBottom: 10 }}>PERFIL COMBINADO</div>
-            <h1 style={{ color: 'white', fontSize: 22, fontWeight: 700, lineHeight: 1.3, marginBottom: 6 }}>{dogName} tiene un perfil combinado</h1>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>Eso no es ambigüedad — es precisión.</p>
-          </div>
-          <div style={{ padding: '24px' }}>
-            <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginBottom: 18 }}>
-              Algunos perros no encajan perfectamente en una sola categoría. {dogName} muestra características de dos patrones distintos — su entrenamiento necesita atender más de una cosa al mismo tiempo.
+            <h1 style={{ color: 'white', fontSize: 22, fontWeight: 700, lineHeight: 1.3, marginBottom: 8 }}>{dogName} tiene un perfil combinado</h1>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 1.6 }}>
+              Algunos perros no encajan en una sola categoría. {dogName} muestra características de dos patrones — su entrenamiento necesita atender más de una cosa al mismo tiempo.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          </div>
+
+          <div style={{ padding: '20px 24px 0' }}>
+            <p className="sec-label">Los dos perfiles de {dogName}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               {[c, c2].map((cc: any, i: number) => (
-                <div key={i} style={{ background: WARM, borderRadius: 10, padding: '16px 12px', textAlign: 'center' }}>
+                <div key={i} style={{ background: WARM, borderRadius: 10, padding: '16px 12px', textAlign: 'center', border: `2px solid ${i === 0 ? NAVY : '#E2E8F0'}` }}>
                   <div style={{ fontSize: 28, marginBottom: 6 }}>{cc.emoji}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, lineHeight: 1.3 }}>{cc.name}</div>
-                  <div style={{ fontSize: 12, color: DGREY, marginTop: 4 }}>{cc.energy}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{cc.name}</div>
+                  <div style={{ fontSize: 11, color: DGREY, marginTop: 4 }}>{cc.energy}</div>
                 </div>
               ))}
             </div>
-            <div style={{ background: NAVY, borderRadius: 12, padding: '22px', marginBottom: 8 }}>
-              <p style={{ color: GREEN, fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Cuéntame sobre {dogName}</p>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 14 }}>Un perfil combinado merece una conversación más que un resultado de pantalla.</p>
-              <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 8 }}>Escribe CUERNAVACA · Sin compromiso</p>
-            </div>
-            <button className="ghost-btn" onClick={restart} style={{ width: '100%', textAlign: 'center' }}>Empezar de nuevo</button>
+          </div>
+
+          <div style={{ background: WARM, padding: '20px 24px' }}>
+            <p className="sec-label">Perfil de {dogName}</p>
+            <MiniRadar avg={avg} />
+            <p style={{ fontSize: 11, color: '#718096', textAlign: 'center', marginTop: 6 }}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p>
+          </div>
+
+          <div style={{ padding: '16px 24px 0' }}>
+            <p className="sec-label">Perfil principal — {c.name}</p>
+          </div>
+          <ResultBody c={c} dogName={dogName} avg={avg} showRadar={false} restart={restart} />
+
+          <div style={{ padding: '16px 24px 0', marginTop: 8, borderTop: `4px solid ${WARM}` }}>
+            <p className="sec-label">Segundo perfil — {c2.name}</p>
+            <div className="myth-box" style={{ margin: '8px 0 12px' }}>«{c2.myth}»</div>
+            <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>{c2.body}</p>
+            {c2.needs.map((nd: string, i: number) => (
+              <div key={i} className="need-item">
+                <span style={{ color: GREEN, fontSize: 15, flexShrink: 0 }}>✓</span>
+                <span>{nd}</span>
+              </div>
+            ))}
+            <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginTop: 12, marginBottom: 24 }}>{c2.bridge(dogName)}</p>
           </div>
         </div>
       </>
@@ -484,8 +559,8 @@ export default function App() {
       <>
         <style>{css}</style>
         <div className="app" style={{ paddingBottom: 48 }}>
-          {/* Header */}
           <div style={{ background: NAVY, padding: '28px 24px' }}>
+            <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 36, objectFit: 'contain', marginBottom: 16 }} />
             <div style={{ display: 'inline-block', background: 'rgba(42,196,0,0.2)', border: '1px solid rgba(42,196,0,0.4)', borderRadius: 20, padding: '3px 12px', fontSize: 11, color: GREEN, fontWeight: 700, marginBottom: 10 }}>
               RESULTADO DE {dogName.toUpperCase()}
             </div>
@@ -495,68 +570,7 @@ export default function App() {
             </div>
             <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 1.6 }}>{c.rec(dogName)}</p>
           </div>
-
-          {/* Radar */}
-          <div style={{ background: WARM, padding: '20px 24px' }}>
-            <p className="sec-label">Perfil de {dogName}</p>
-            <MiniRadar avg={avg} />
-            <p style={{ fontSize: 11, color: '#718096', textAlign: 'center', marginTop: 6 }}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p>
-          </div>
-
-          {/* Reframe */}
-          <div style={{ padding: '20px 24px 0' }}>
-            <p className="sec-label">Lo que está pasando en realidad</p>
-            <div className="myth-box" style={{ marginBottom: 14 }}>«{c.myth}»</div>
-            <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>{c.body}</p>
-
-            <p className="sec-label">Lo que necesita {dogName}</p>
-            <div style={{ marginBottom: 8 }}>
-              {c.needs.map((nd: string, i: number) => (
-                <div key={i} className="need-item">
-                  <span style={{ color: GREEN, fontSize: 15, flexShrink: 0 }}>✓</span>
-                  <span>{nd}</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginTop: 10, marginBottom: 20 }}>{c.bridge(dogName)}</p>
-          </div>
-
-          {/* First CTA */}
-          <div style={{ background: NAVY, padding: '24px' }}>
-            <h3 style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta1(dogName)}</h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 12 }}>{c.sub1}</p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 10 }}>El único en México con certificación reconocida mundialmente en entrenamiento canino</p>
-            <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 8 }}>Sin compromiso · Solo una conversación</p>
-          </div>
-
-          {/* Trust */}
-          <div style={{ padding: '20px 24px', background: WARM }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-              <div style={{ padding: '12px', background: 'white', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: GREEN, letterSpacing: '0.06em', marginBottom: 4 }}>CERTIFICACIÓN</div>
-                <div style={{ fontSize: 11, color: DGREY, lineHeight: 1.4 }}>Único en México con cert. reconocida mundialmente</div>
-              </div>
-              <div style={{ padding: '12px', background: 'white', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: GREEN, letterSpacing: '0.06em', marginBottom: 4 }}>CRUZ ROJA</div>
-                <div style={{ fontSize: 11, color: DGREY, lineHeight: 1.4 }}>Entrenador oficial SAR · Cruz Roja Morelos</div>
-              </div>
-            </div>
-            <div style={{ background: 'white', borderRadius: 8, padding: '14px' }}>
-              <p style={{ fontSize: 13, color: DGREY, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 6 }}>
-                "Pensé que mi perro simplemente era difícil. Mike me explicó qué estaba pasando realmente — y en tres semanas vi la diferencia."
-              </p>
-              <p style={{ fontSize: 11, color: '#718096' }}>— Cliente Habla Perro, Cuernavaca</p>
-            </div>
-          </div>
-
-          {/* Second CTA */}
-          <div style={{ padding: '24px' }}>
-            <h3 style={{ color: NAVY, fontSize: 16, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta2}</h3>
-            <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe CUERNAVACA y te cuento todo.</p>
-            <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-navy">💬 Hablar con Mike</a>
-            <button className="ghost-btn" onClick={restart} style={{ width: '100%', textAlign: 'center', marginTop: 8 }}>Empezar de nuevo</button>
-          </div>
+          <ResultBody c={c} dogName={dogName} avg={avg} showRadar={true} restart={restart} />
         </div>
       </>
     );
