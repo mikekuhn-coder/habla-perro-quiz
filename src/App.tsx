@@ -94,60 +94,31 @@ const QUESTIONS = [
   {
     q: (n) => `Cuando sales a caminar con ${n}...`,
     answers: [
-      {
-        t: 'Jala todo el tiempo y no para de moverse',
-        s: { activacion: 5, impulsos: 1 },
-        ts: 'global',
-      },
-      {
-        t: 'Quiere saludar a cada perro y persona que ve',
-        s: { activacion: 4, social: 1 },
-        ts: 'social',
-      },
-      {
-        t: 'Se pone tenso o ladra cuando algo le preocupa',
-        s: { sensibilidad: 4, social: 2 },
-      },
-      {
-        t: 'Va a su ritmo, sin mucho interés en ti',
-        s: { conexion: 1, auto_ref: 4 },
-      },
+      { t: 'Jala todo el tiempo y no para de moverse', s: { activacion: 5, impulsos: 1 }, ts: 'global' },
+      { t: 'Quiere saludar a cada perro y persona que ve', s: { activacion: 4, social: 1 }, ts: 'social' },
+      { t: 'Se pone tenso o ladra cuando algo le preocupa', s: { sensibilidad: 4, social: 2 } },
+      { t: 'Va a su ritmo, sin mucho interés en ti', s: { conexion: 1, auto_ref: 4 } },
+      { t: 'Camina a tu lado, tranquilo y sin problemas', s: { activacion: 2, conexion: 4 } },
     ],
   },
   {
     q: () => 'Cuando ve a otro perro o a una persona desconocida...',
     answers: [
-      {
-        t: 'Pierde completamente el control',
-        s: { impulsos: 1, activacion: 5 },
-      },
-      {
-        t: 'Se emociona mucho y quiere llegar a como dé lugar',
-        s: { impulsos: 2, social: 1 },
-      },
-      {
-        t: 'Se pone alerta, inseguro o reactivo',
-        s: { sensibilidad: 5, impulsos: 2 },
-      },
+      { t: 'Pierde completamente el control', s: { impulsos: 1, activacion: 5 } },
+      { t: 'Se emociona mucho y quiere llegar a como dé lugar', s: { impulsos: 2, social: 1 } },
+      { t: 'Se pone alerta, inseguro o reactivo', s: { sensibilidad: 5, impulsos: 2 } },
       { t: 'Decide si le interesa o no', s: { impulsos: 3, auto_ref: 4 } },
+      { t: 'Se emociona un poco pero se calma rápido', s: { impulsos: 3, sensibilidad: 2 } },
     ],
   },
   {
     q: (n) => `En casa, ${n} generalmente...`,
     answers: [
-      {
-        t: 'Nunca para — siempre está en movimiento',
-        s: { activacion: 5, auto_ref: 3 },
-      },
-      {
-        t: 'Te sigue a todos lados y busca tu atención',
-        s: { conexion: 5, activacion: 3 },
-      },
-      {
-        t: 'Se altera fácil con ruidos o cambios en la rutina',
-        s: { sensibilidad: 4, activacion: 3 },
-      },
+      { t: 'Nunca para — siempre está en movimiento', s: { activacion: 5, auto_ref: 3 } },
+      { t: 'Te sigue a todos lados y busca tu atención', s: { conexion: 5, activacion: 3 } },
+      { t: 'Se altera fácil con ruidos o cambios en la rutina', s: { sensibilidad: 4, activacion: 3 } },
       { t: 'Es tranquilo e independiente', s: { conexion: 1, activacion: 2 } },
+      { t: 'Tiene momentos activos y momentos tranquilos', s: { activacion: 2, conexion: 3 } },
     ],
   },
   {
@@ -155,49 +126,34 @@ const QUESTIONS = [
     qHighlight: 'fuera de casa',
     qSuffix: '...',
     answers: [
-      {
-        t: 'No puede concentrarse — está muy activado',
-        s: { impulsos: 1, activacion: 5 },
-      },
-      {
-        t: 'Quiere hacerlo pero algo lo distrae',
-        s: { conexion: 3, auto_ref: 3 },
-        pat: 'ctx',
-      },
-      {
-        t: 'Duda, se bloquea o no reacciona',
-        s: { sensibilidad: 4, conexion: 3 },
-      },
-      {
-        t: 'Solo responde si le conviene en ese momento',
-        s: { auto_ref: 4, conexion: 2 },
-        pat: 'con',
-      },
+      { t: 'No puede concentrarse — está muy activado', s: { impulsos: 1, activacion: 5 } },
+      { t: 'Quiere hacerlo pero algo lo distrae', s: { conexion: 3, auto_ref: 3 }, pat: 'ctx' },
+      { t: 'Duda, se bloquea o no reacciona', s: { sensibilidad: 4, conexion: 3 } },
+      { t: 'Solo responde si le conviene en ese momento', s: { auto_ref: 4, conexion: 2 }, pat: 'con' },
+      { t: 'Responde bien aunque a veces tarda un poco', s: { impulsos: 3, conexion: 4 } },
     ],
   },
   {
     q: (n) => `Con otros perros o personas desconocidas, ${n}...`,
     answers: [
-      {
-        t: 'Es intenso en cualquier situación, no importa el contexto',
-        s: { social: 1, activacion: 5 },
-        ts: 'global',
-      },
-      {
-        t: 'Se lanza a saludar sin medir el espacio de los demás',
-        s: { social: 1, activacion: 3 },
-        ts: 'social',
-      },
-      {
-        t: 'Se pone reactivo, inseguro o a la defensiva',
-        s: { sensibilidad: 5, social: 2 },
-      },
-      {
-        t: 'Es selectivo — depende del día y del momento',
-        s: { social: 3, conexion: 2 },
-      },
+      { t: 'Es intenso en cualquier situación, no importa el contexto', s: { social: 1, activacion: 5 }, ts: 'global' },
+      { t: 'Se lanza a saludar sin medir el espacio de los demás', s: { social: 1, activacion: 3 }, ts: 'social' },
+      { t: 'Se pone reactivo, inseguro o a la defensiva', s: { sensibilidad: 5, social: 2 } },
+      { t: 'Es selectivo — depende del día y del momento', s: { social: 3, conexion: 2 } },
+      { t: 'Saluda con calma y sigue adelante sin drama', s: { social: 4, impulsos: 3 } },
     ],
   },
+  {
+    q: (n) => `Cuando ${n} encuentra comida, un olor o algo interesante en el suelo...`,
+    answers: [
+      { t: 'Se obsesiona — no hay nada que lo pare', s: { auto_ref: 5, impulsos: 1 } },
+      { t: 'Lo investiga un momento y sigue caminando', s: { auto_ref: 3, conexion: 3 } },
+      { t: 'Se pone nervioso, protector o tenso', s: { sensibilidad: 4, social: 2 } },
+      { t: 'Se encierra en eso completamente y te ignora por completo', s: { auto_ref: 5, conexion: 1 } },
+      { t: 'Lo nota, lo investiga un momento y vuelve contigo', s: { auto_ref: 2, conexion: 4 } },
+    ],
+  },
+];
   {
     q: (n) =>
       `Cuando ${n} encuentra comida, un olor o algo interesante en el suelo...`,
