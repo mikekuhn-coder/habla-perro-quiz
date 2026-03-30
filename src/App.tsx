@@ -388,7 +388,10 @@ function score(answers) {
   }
 
   const mixed = gap < 0.5;
-  if (sorted[0][1] > 2.5) primary = 'genio_selectivo';
+ if(sorted[0][1]>2.5) primary="genio_selectivo";
+const validCats=["red_bull","alcalde_amiguero","protector_preocupado","dramatico","independiente","sombra","genio_selectivo","oportunista"];
+if(!validCats.includes(primary)) primary="genio_selectivo";
+if(!validCats.includes(second)) second="oportunista";
   return { cat: primary, cat2: second, mixed, avg };
 }
 
