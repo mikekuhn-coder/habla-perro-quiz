@@ -1072,7 +1072,7 @@ function ResultScreen({ result, dogName, onRestart }) {
 
       <div style={{ background: WARM, padding: '24px' }}>
         <p className="section-label">Así se ve el perfil de {dogName}</p>
-        <RadarViz avg={avg} />
+       <MiniRadar avg={avg} />
         <p
           style={{
             fontSize: 12,
