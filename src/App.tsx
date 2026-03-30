@@ -1306,15 +1306,15 @@ export default function App() {
     }
   };
 
-  const restart = () => {
-    setScreen('intro');
-    setDogName('');
-    setQIndex(0);
-    setAnswers([]);
-    setSelected(null);
-    setProgress(0);
-    setResult(null);
-  };
+  const restart=()=>{
+  setScreen("intro");
+  setName("");
+  setQi(0);
+  setAnswers([]);
+  setSel(null);
+  setProg(0);
+  setResult(null);
+};
 
   return (
     <>
