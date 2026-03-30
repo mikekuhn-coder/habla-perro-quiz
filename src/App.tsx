@@ -5,9 +5,14 @@ const GREEN = '#2AC400';
 const WARM  = '#F5F5F4';
 const DGREY = '#4A5568';
 
-// WhatsApp encoded to avoid plain-text scraping
+// WhatsApp number encoded to avoid plain-text scraping
 const WA_NUM = atob('NTI3Nzc2MTAxNjQ3');
-const WA_URL = `https://wa.me/${WA_NUM}?text=CUERNAVACA`;
+
+// Dynamic WA URL — personalized with owner and dog name
+const buildWAUrl = (ownerName: string, dogName: string) => {
+  const msg = `Hola Mike, soy ${ownerName}. Acabo de hacer el quiz con ${dogName} y me gustaría saber más. 🐾`;
+  return `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`;
+};
 
 const LOGO_WHITE = '/02-HP-Logo-Main-White.png';
 const CCPDT_LOGO = '/cpdt-ka-color-med.png';
@@ -16,9 +21,9 @@ const APDT_LOGO  = '/APDT%20logo.png';
 // Google Apps Script endpoint
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwOYII3A9PnS8XOhkmgqlkzg8GsAZW_XGQkSA1Zj106QV9yq4PqkL2hyAdXOtzXSJo/exec';
 
-const TRAITS      = ['activacion','impulsos','sensibilidad','social','conexion','auto_ref'];
+const TRAITS       = ['activacion','impulsos','sensibilidad','social','conexion','auto_ref'];
 const TRAIT_LABELS = ['Activación','Impulsos','Sensibilidad','Control Social','Conexión','Auto-ref.'];
-const VALID_CATS  = ['red_bull','alcalde_amiguero','protector_preocupado','dramatico','independiente','sombra','genio_selectivo','oportunista'];
+const VALID_CATS   = ['red_bull','alcalde_amiguero','protector_preocupado','dramatico','independiente','sombra','genio_selectivo','oportunista'];
 
 const VECTORS: Record<string, Record<string, number>> = {
   red_bull:             { activacion:5, impulsos:1, sensibilidad:2, social:2, conexion:3, auto_ref:3 },
@@ -31,7 +36,7 @@ const VECTORS: Record<string, Record<string, number>> = {
   oportunista:          { activacion:3, impulsos:2, sensibilidad:1, social:3, conexion:2, auto_ref:5 },
 };
 
-// ── QUESTIONS — all spelling/punctuation corrected ────────────────────────────
+// ── QUESTIONS — all spelling and punctuation verified ─────────────────────────
 const QUESTIONS = [
   {
     q: (n: string) => `Cuando sales a caminar con ${n}...`,
@@ -241,7 +246,7 @@ async function submitToSheets(payload: Record<string, any>) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-  } catch (_) { /* silent fail — never block UX */ }
+  } catch (_) { /* silent fail */ }
 }
 
 // ── CSS ───────────────────────────────────────────────────────────────────────
@@ -344,13 +349,24 @@ function PhoneCapture({ phone, setPhone }: { phone: string; setPhone: (v: string
   );
 }
 
-// Reusable result body — used by both single and mixed
-function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, setPhone }: {
+// ── RESULT BODY ───────────────────────────────────────────────────────────────
+// Layout order (verified):
+// 1. Radar (if showRadar)
+// 2. Primary myth + body
+// 3. Secondary myth + body (mixed only) ← ABOVE combined needs
+// 4. Combined needs list (both profiles merged)
+// 5. Bridge text
+// 6. Phone capture (optional)
+// 7. First CTA (WhatsApp) ← second profile is ABOVE this
+// 8. Credentials + testimonial
+// 9. Second CTA + restart
+function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, setPhone, waUrl }: {
   c: any; c2?: any; dogName: string; avg: Record<string,number>;
   showRadar: boolean; isMixed: boolean; restart: () => void;
-  phone: string; setPhone: (v: string) => void;
+  phone: string; setPhone: (v: string) => void; waUrl: string;
 }) {
-  const combinedNeeds = isMixed && c2
+  // Combined needs — deduplicated merge of both profiles
+  const combinedNeeds: string[] = isMixed && c2
     ? [...c.needs, ...c2.needs.filter((n: string) => !c.needs.includes(n))]
     : c.needs;
 
@@ -365,10 +381,12 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
       )}
 
       <div style={{ padding: '20px 24px 0' }}>
+        {/* PRIMARY myth + body */}
         <p className="sec-label">Lo que está pasando en realidad</p>
         <div className="myth-box" style={{ marginBottom: 14 }}>«{c.myth}»</div>
         <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>{c.body}</p>
 
+        {/* SECONDARY myth + body — ABOVE the needs list and CTA */}
         {isMixed && c2 && (
           <>
             <div className="myth-box" style={{ marginBottom: 14, borderLeftColor: '#92BBE3' }}>«{c2.myth}»</div>
@@ -376,6 +394,7 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
           </>
         )}
 
+        {/* COMBINED needs list */}
         <p className="sec-label">Lo que necesita {dogName}</p>
         <div style={{ marginBottom: 8 }}>
           {combinedNeeds.map((nd: string, i: number) => (
@@ -388,16 +407,16 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
         <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginTop: 10, marginBottom: 20 }}>{c.bridge(dogName)}</p>
       </div>
 
-      {/* Optional phone before CTA */}
+      {/* Optional phone capture — before CTA */}
       <div style={{ padding: '0 24px' }}>
         <PhoneCapture phone={phone} setPhone={setPhone} />
       </div>
 
-      {/* First CTA */}
+      {/* FIRST CTA — WhatsApp */}
       <div style={{ background: NAVY, padding: '24px' }}>
         <h3 style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta1(dogName)}</h3>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 16 }}>{c.sub1}</p>
-        <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a>
+        <a href={waUrl} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 8 }}>Sin compromiso · Solo una conversación</p>
       </div>
 
@@ -407,11 +426,11 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
         <Testimonial />
       </div>
 
-      {/* Second CTA */}
+      {/* SECOND CTA */}
       <div style={{ padding: '24px' }}>
         <h3 style={{ color: NAVY, fontSize: 16, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta2}</h3>
-        <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe CUERNAVACA y te cuento todo.</p>
-        <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-navy">💬 Hablar con Mike</a>
+        <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe a Mike y cuéntale todo.</p>
+        <a href={waUrl} target="_blank" rel="noreferrer" className="btn-navy">💬 Hablar con Mike</a>
         <button className="ghost-btn" onClick={restart} style={{ width: '100%', textAlign: 'center', marginTop: 8 }}>Empezar de nuevo</button>
       </div>
     </>
@@ -435,7 +454,12 @@ export default function App() {
     setAnswers([]); setSel(null); setProgress(0); setResult(null); setPhone('');
   };
 
-  // Submit to Sheets when phone is updated on result page
+  const canStart = ownerName.trim() && dogName.trim();
+
+  // Build personalized WA URL from quiz data
+  const waUrl = buildWAUrl(ownerName, dogName);
+
+  // Submit phone update when entered on result page
   useEffect(() => {
     if (screen === 'result' && phone && result) {
       submitToSheets({
@@ -443,14 +467,18 @@ export default function App() {
         owner_name: ownerName, dog_name: dogName, phone,
         category: result.cat, category2: result.mixed ? result.cat2 : '—',
         mixed: result.mixed,
-        activacion: +result.avg.activacion.toFixed(2), impulsos: +result.avg.impulsos.toFixed(2),
-        sensibilidad: +result.avg.sensibilidad.toFixed(2), social: +result.avg.social.toFixed(2),
-        conexion: +result.avg.conexion.toFixed(2), auto_ref: +result.avg.auto_ref.toFixed(2),
+        activacion: +result.avg.activacion.toFixed(2),
+        impulsos: +result.avg.impulsos.toFixed(2),
+        sensibilidad: +result.avg.sensibilidad.toFixed(2),
+        social: +result.avg.social.toFixed(2),
+        conexion: +result.avg.conexion.toFixed(2),
+        auto_ref: +result.avg.auto_ref.toFixed(2),
         update: true,
       });
     }
   }, [phone]);
 
+  // Loading — score and submit
   useEffect(() => {
     if (screen !== 'loading') return;
     let p = 0;
@@ -460,14 +488,16 @@ export default function App() {
         clearInterval(iv);
         const res = calcScore(answers);
         setResult(res);
-        // Submit to Google Sheets
         submitToSheets({
           timestamp: new Date().toISOString(),
           owner_name: ownerName, dog_name: dogName, phone: phone || '—',
           category: res.cat, category2: res.mixed ? res.cat2 : '—', mixed: res.mixed,
-          activacion: +res.avg.activacion.toFixed(2), impulsos: +res.avg.impulsos.toFixed(2),
-          sensibilidad: +res.avg.sensibilidad.toFixed(2), social: +res.avg.social.toFixed(2),
-          conexion: +res.avg.conexion.toFixed(2), auto_ref: +res.avg.auto_ref.toFixed(2),
+          activacion: +res.avg.activacion.toFixed(2),
+          impulsos: +res.avg.impulsos.toFixed(2),
+          sensibilidad: +res.avg.sensibilidad.toFixed(2),
+          social: +res.avg.social.toFixed(2),
+          conexion: +res.avg.conexion.toFixed(2),
+          auto_ref: +res.avg.auto_ref.toFixed(2),
         });
         setTimeout(() => setScreen('result'), 300);
       }
@@ -486,14 +516,11 @@ export default function App() {
     }, 200);
   };
 
-  const canStart = ownerName.trim() && dogName.trim();
-
   // ── INTRO ──────────────────────────────────────────────────────────────────
   if (screen === 'intro') return (
     <>
       <style>{css}</style>
       <div className="app" style={{ paddingBottom: 40 }}>
-        {/* Logo centered, large, vertically centered in header */}
         <div style={{ background: NAVY, padding: '48px 24px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 80, objectFit: 'contain', marginBottom: 32 }} />
           <h1 style={{ color: 'white', fontSize: 26, fontWeight: 700, lineHeight: 1.3, marginBottom: 14 }}>¿Qué tipo de perro<br />es el tuyo?</h1>
@@ -502,14 +529,12 @@ export default function App() {
           </p>
         </div>
         <div style={{ padding: '28px 24px' }}>
-          {/* Owner first name only */}
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 6 }}>Tu nombre</label>
             <input className="input-field" type="text" placeholder="¿Cómo te llamas?" value={ownerName}
               onChange={e => setOwnerName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && canStart && setScreen('quiz')} />
           </div>
-          {/* Dog name */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 6 }}>¿Cómo se llama tu perro?</label>
             <input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName}
@@ -598,7 +623,6 @@ export default function App() {
       <>
         <style>{css}</style>
         <div className="app" style={{ paddingBottom: 48 }}>
-
           {/* Header — always centered */}
           <div style={{ background: NAVY, padding: '28px 24px', textAlign: 'center' }}>
             <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 40, objectFit: 'contain', display: 'block', margin: '0 auto 16px' }} />
@@ -639,18 +663,19 @@ export default function App() {
             </div>
           )}
 
-          {/* Radar chart */}
+          {/* Radar */}
           <div style={{ background: WARM, padding: '20px 24px', marginTop: mixed ? 16 : 0 }}>
             <p className="sec-label">Perfil de {dogName}</p>
             <MiniRadar avg={avg} />
             <p style={{ fontSize: 11, color: '#718096', textAlign: 'center', marginTop: 6 }}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p>
           </div>
 
-          {/* Full result body — handles both single and mixed */}
+          {/* Result body — second profile ABOVE CTA, combined needs */}
           <ResultBody
             c={c} c2={c2 ?? undefined} dogName={dogName} avg={avg}
             showRadar={false} isMixed={mixed}
             restart={restart} phone={phone} setPhone={setPhone}
+            waUrl={waUrl}
           />
         </div>
       </>
