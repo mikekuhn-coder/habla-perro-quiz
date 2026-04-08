@@ -542,7 +542,7 @@ export default function App() {
         var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
         if(imgH<=pageH){pdf.addImage(imgData,'JPEG',0,0,imgW,imgH);}else{var y=0;while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);y+=pageH;}}
         var b64 = pdf.output('datauristring').split(',')[1];
-        fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pdf_snapshot',owner_name:ownerName,dog_name:dogName,pdf_base64:b64})});
+        fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'pdf_snapshot',owner_name:ownerName,dog_name:dogName,pdf_base64:b64})});
       }).catch(function() {});
     };
     var timer = setTimeout(captureAndSendPDF, 5000);
