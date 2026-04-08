@@ -515,7 +515,8 @@ export default function App() {
     const captureAndSendPDF = async () => {
       try {
         // Load html2canvas from CDN if not already loaded
-        if (!window.html2canvas) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!(window as any).html2canvas) {
           await new Promise<void>((resolve, reject) => {
             const s = document.createElement('script');
             s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
@@ -524,7 +525,8 @@ export default function App() {
           });
         }
         // Load jspdf from CDN if not already loaded
-        if (!window.jspdf) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!(window as any).jspdf) {
           await new Promise<void>((resolve, reject) => {
             const s = document.createElement('script');
             s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -536,8 +538,13 @@ export default function App() {
         const appDiv = document.querySelector('.app') as HTMLElement;
         if (!appDiv) return;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const h2c = (window as any).html2canvas;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { jsPDF } = (window as any).jspdf;
+
         // Capture full scrollable height
-        const canvas = await window.html2canvas(appDiv, {
+        const canvas = await h2c(appDiv, {
           scale: 2,
           useCORS: true,
           allowTaint: true,
@@ -548,8 +555,7 @@ export default function App() {
           windowHeight: appDiv.scrollHeight,
         });
 
-        const { jsPDF } = window.jspdf;
-        const imgData  = canvas.toDataURL('image/jpeg', 0.88);
+
         const pageW    = 210; // A4 mm
         const pageH    = 297;
         const imgW     = pageW;
