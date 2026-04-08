@@ -532,7 +532,7 @@ export default function App() {
       Promise.all([loadH2C, loadJsPDF]).then(function() {
         var appDiv = document.querySelector('.app');
         if (!appDiv) return;
-        return window.html2canvas(appDiv, { scale:1.5, useCORS:false, allowTaint:true, scrollY:0, logging:false, imageTimeout:0, removeContainer:true });
+        return window.html2canvas(appDiv, { scale:2, useCORS:true, allowTaint:true, scrollY:0, scrollX:0, width:440, height:appDiv.scrollHeight, windowWidth:440, logging:false, imageTimeout:0, removeContainer:true });
       }).then(function(canvas) {
         if (!canvas) return;
         var jsPDF = window.jspdf.jsPDF;
