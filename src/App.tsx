@@ -532,7 +532,10 @@ export default function App() {
       Promise.all([loadH2C, loadJsPDF]).then(function() {
         var appDiv = document.querySelector('.app');
         if (!appDiv) return;
-        return window.html2canvas(appDiv, { scale:2, useCORS:true, allowTaint:true, scrollY:0, scrollX:0, width:440, height:appDiv.scrollHeight, windowWidth:440, logging:false, imageTimeout:0, removeContainer:true });
+        // Fix SVG widths before capture
+      var svgs=appDiv.querySelectorAll('svg');svgs.forEach(function(s){var w=s.getBoundingClientRect().width;s.setAttribute('width',w+'px');s.style.width=w+'px';s.style.maxWidth='none';});
+      var imgs=appDiv.querySelectorAll('img');imgs.forEach(function(i){i.crossOrigin='anonymous';});
+      return window.html2canvas(appDiv, { scale:2, useCORS:true, allowTaint:true, scrollY:0, scrollX:0, width:440, height:appDiv.scrollHeight, windowWidth:440, logging:false, imageTimeout:0, removeContainer:true });
       }).then(function(canvas) {
         if (!canvas) return;
         var jsPDF = window.jspdf.jsPDF;
