@@ -595,6 +595,9 @@ export default function App() {
     const timer = setTimeout(captureAndSendPDF, 2000);
     return () => clearTimeout(timer);
   }, [screen, result]);
+
+  useEffect(() => {
+    if (screen !== 'loading') return;
     let p = 0;
     const iv = setInterval(() => {
       p += 2; setProgress(p);
