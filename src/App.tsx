@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const NAVY  = '#0F2451';
 const GREEN = '#2AC400';
@@ -126,70 +128,14 @@ const QUESTIONS = [
 ];
 
 const COPY: Record<string, any> = {
-  red_bull: { name:'Red Bull Dog', emoji:'🔴', energy:'Explosivo',
-    rec:(n:string)=>`${n} vive a mil por hora: jala en la correa, ignora todo cuando se emociona y parece que nunca tiene apagador. No es que no te quiera escuchar — es que cuando está así, literalmente no puede.`,
-    myth:'Muchos piensan que un perro así necesita más ejercicio o mano más firme. Ninguna de las dos cosas resuelve esto.',
-    body:'Lo que está pasando es que tiene un nivel de activación muy alto que se retroalimenta solo. Cuando esa activación sube demasiado, el cerebro deja de tener acceso a lo que sabe hacer. No es desobediencia — es que su sistema nervioso todavía no aprendió a bajar las revoluciones, y eso sí tiene solución.',
-    needs:['Aprender la calma como habilidad entrenada, no como consecuencia del cansancio','Control de impulsos con distracciones graduales y manejables','Rutinas que bajen su activación antes de pedirle concentración'],
-    bridge:(n:string)=>`Con un plan claro, ${n} puede aprender a regularse — y ese cambio transforma cada salida, cada visita y cada momento en casa.`,
-    cta1:(n:string)=>`¿Por dónde empiezas con un perro como ${n}?`, sub1:'Cuéntame qué está pasando y te digo qué haría yo primero.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  alcalde_amiguero: { name:'Alcalde Amiguero', emoji:'🟡', energy:'Intenso',
-    rec:(n:string)=>`${n} ama a todo el mundo — y ese amor no tiene filtro ni freno. Salta, jala, invade el espacio... y tú terminas disculpándote con todos en el parque.`,
-    myth:"'Es que es muy amistoso' — todos lo dicen. Pero amistoso y sin control no es lo mismo.",
-    body:'Lo que está pasando es que aprendió que lanzarse y empujar funciona — porque históricamente le ha dado acceso a lo que más quiere: contacto social. No tiene freno porque nunca aprendió que esperar también tiene recompensa. No es mal carácter. Es una historia de aprendizaje que se puede reescribir.',
-    needs:['Aprender a esperar antes de tener acceso a lo que quiere','Control de impulsos específicamente en contextos sociales','Saludos controlados como comportamiento que vale la pena'],
-    bridge:(n:string)=>`Cuando ${n} entienda que la calma abre puertas — literalmente — todo cambia para él y para ti.`,
-    cta1:(n:string)=>`¿Quieres que ${n} aprenda a saludar sin drama?`, sub1:'Escríbeme y hablamos de qué está pasando exactamente.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  protector_preocupado: { name:'Protector Preocupado', emoji:'🟠', energy:'Defensivo',
-    rec:(n:string)=>`${n} ladra, se tensa o reacciona cuando algo le preocupa — y tú ya aprendiste qué situaciones lo van a disparar. Caminar con él a veces se siente como anticipar una crisis que no puedes evitar.`,
-    myth:"Es fácil pensar que es agresivo, dominante o simplemente 'así es'. Ninguna de esas cosas es lo que está pasando.",
-    body:'Lo que está mostrando es miedo o inseguridad — no agresión. Aprendió que cuando ladra o se lanza, las cosas que lo asustan se van, y eso refuerza exactamente la conducta que más te preocupa. No está siendo malo. Está haciendo lo único que sabe hacer cuando se siente inseguro.',
-    needs:['Construir seguridad emocional primero — antes de trabajar la reactividad','Exposición gradual con respuestas alternativas al ladrido y al jalón','Un perro que se siente seguro no necesita ponerse a la defensiva'],
-    bridge:(n:string)=>`Este proceso requiere paciencia y un plan claro — pero cuando ${n} empiece a sentirse seguro, los cambios son profundos y duraderos.`,
-    cta1:(_n:string)=>'Esto tiene solución — y no requiere corrección ni castigo.', sub1:'Cuéntame qué situaciones lo disparan y por dónde vamos.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  dramatico: { name:'Dramático', emoji:'🟣', energy:'Volátil',
-    rec:(n:string)=>`${n} puede estar tranquilo un momento y al siguiente estar en modo volcán — ladrando, jalando o haciendo drama total. No hay punto medio: o está bien o está completamente desbordado.`,
-    myth:'Muchos lo ven como agresividad o mal temperamento. Pero lo que está pasando no es agresión — es frustración.',
-    body:'Cuando quiere algo y no puede tenerlo, su tolerancia se agota muy rápido. Y en algún punto aprendió que escalar el drama a veces funciona. No es peligroso ni roto. Su sistema emocional simplemente no aprendió aún a manejar la espera.',
-    needs:['Tolerancia a la frustración — aprender que esperar también tiene recompensa','Bajar la intensidad emocional antes de pedir comportamientos específicos','Que la calma abra lo que el drama no puede abrir'],
-    bridge:(n:string)=>`Con el entrenamiento correcto, ${n} puede aprender que no necesita explotar para conseguir lo que quiere.`,
-    cta1:(n:string)=>`¿Quieres entender qué dispara a ${n} y cómo manejarlo?`, sub1:'Escríbeme y hablamos de qué está pasando exactamente.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  independiente: { name:'Independiente', emoji:'🔵', energy:'Desconectado',
-    rec:(n:string)=>`Le hablas y no voltea. Lo llamas y sigue olfateando. En casa te hace caso — afuera es como si no existieras. ${n} tiene su propio mundo, y tú no siempre estás incluida.`,
-    myth:'Esto se interpreta casi siempre como terquedad o dominancia. Ninguna de las dos cosas es lo que está pasando.',
-    body:'Lo que está pasando es más simple: el mundo afuera le ofrece más recompensa que tú en este momento. No es personal. Es que todavía no descubrió que trabajar contigo vale más la pena que seguir ese olor.',
-    needs:['Construir valor de reforzamiento contigo — tú necesitas competir con el entorno','Conexión y engagement como base, antes de exigir obediencia','Recall confiable como primer objetivo medible y real'],
-    bridge:(n:string)=>`Cuando ${n} descubra que orientarse hacia ti predice cosas buenas, todo lo demás se vuelve mucho más fácil.`,
-    cta1:(n:string)=>`El recall confiable de ${n} empieza aquí — y es más rápido de lo que crees.`, sub1:'Cuéntame cómo es afuera y por dónde empezamos.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  sombra: { name:'Sombra', emoji:'⚫', energy:'Dependiente',
-    rec:(n:string)=>`${n} te sigue a todos lados, se angustia cuando no te ve y no puede quedarse solo sin que algo pase. Lo que muchos ven como amor total, tú sabes que a veces se siente agotador — para los dos.`,
-    myth:"'Es que te quiere mucho' — todos lo dicen. Pero lo que muestra no es solo amor. Es dependencia emocional.",
-    body:'No tiene todavía las habilidades para regularse solo. Tú te convertiste en su única fuente de calma — y eso es mucho peso para los dos. No está mal apegado ni es un perro dañado. Simplemente nunca aprendió que también puede estar bien cuando está solo.',
-    needs:['Desarrollar autonomía — la calma independiente como habilidad entrenada','Tolerancia gradual a la separación, sin ansiedad en el proceso','Momentos y espacios propios que aprenda a disfrutar'],
-    bridge:(n:string)=>`Un perro con autonomía es más equilibrado, más feliz — y tú puedes moverte por tu casa sin escolta permanente.`,
-    cta1:(n:string)=>`La independencia de ${n} se entrena — con calma y sin drama.`, sub1:'Escríbeme y hablamos de cómo está siendo esto en casa.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  genio_selectivo: { name:'Genio Selectivo', emoji:'🟢', energy:'Condicional',
-    rec:(n:string)=>`En casa te hace caso perfecto. Afuera es como si nunca hubiera aprendido nada. ${n} sabe exactamente lo que le pides — solo que decide cuándo vale la pena hacerlo.`,
-    myth:"Esto se lee casi siempre como manipulación o que 'el perro te está probando'. No es ninguna de las dos cosas.",
-    body:'Lo que está pasando es que aprendió los comportamientos en un contexto — y nadie le enseñó que aplican en todos los demás. Afuera, el entorno compite con tus instrucciones y gana. Por ahora. No está eligiendo ignorarte. Está respondiendo exactamente como su historia de entrenamiento le enseñó a responder.',
-    needs:['Generalizar lo que ya sabe a diferentes entornos y niveles de distracción','Consistencia en el reforzamiento — que responder siempre valga la pena','Entrenamiento en contextos reales, no solo dentro de casa'],
-    bridge:(n:string)=>`Cuando las reglas sean las mismas en todos lados, ${n} va a dejar de "elegir" — porque la respuesta correcta siempre va a tener valor.`,
-    cta1:(n:string)=>`Lo que ${n} ya sabe puede funcionar en cualquier lugar.`, sub1:'Cuéntame en qué situaciones te falla y por dónde empezamos.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
-  oportunista: { name:'Oportunista', emoji:'🟤', energy:'Oportunista',
-    rec:(n:string)=>`${n} roba comida, destruye cosas, se lanza hacia lo que le interesa — y lo hace con una eficiencia que casi da risa. Sabe exactamente lo que quiere y siempre encuentra la manera de conseguirlo.`,
-    myth:"Es tentador pensar que lo hace con intención, que es 'malicioso' o que actúa por despecho. No es ninguna de esas cosas.",
-    body:'Lo que está pasando es más simple: esas conductas le funcionan y le funcionan bien. El mundo le paga mejor que tú en este momento. No es un perro malo. Es un perro muy bueno encontrando recompensas donde las hay.',
-    needs:['Manejo del entorno — evitar que las conductas indeseadas sigan siendo rentables','Alternativas que también valgan la pena y que pueda elegir en su lugar','Construir contigo una historia de reforzamiento que compita con el entorno'],
-    bridge:(n:string)=>`Cuando tú seas la fuente más predecible de cosas buenas, ${n} va a preferir trabajar contigo — porque eso también tiene sentido para él.`,
-    cta1:(n:string)=>`Cambiar la ecuación de ${n} es más directo de lo que parece.`, sub1:'Cuéntame qué conductas te están volviendo loca y empezamos ahí.',
-    cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  red_bull: { name:'Red Bull Dog', emoji:'🔴', energy:'Explosivo', rec:(n:string)=>`${n} vive a mil por hora: jala en la correa, ignora todo cuando se emociona y parece que nunca tiene apagador. No es que no te quiera escuchar — es que cuando está así, literalmente no puede.`, myth:'Muchos piensan que un perro así necesita más ejercicio o mano más firme. Ninguna de las dos cosas resuelve esto.', body:'Lo que está pasando es que tiene un nivel de activación muy alto que se retroalimenta solo. Cuando esa activación sube demasiado, el cerebro deja de tener acceso a lo que sabe hacer. No es desobediencia — es que su sistema nervioso todavía no aprendió a bajar las revoluciones, y eso sí tiene solución.', needs:['Aprender la calma como habilidad entrenada, no como consecuencia del cansancio','Control de impulsos con distracciones graduales y manejables','Rutinas que bajen su activación antes de pedirle concentración'], bridge:(n:string)=>`Con un plan claro, ${n} puede aprender a regularse — y ese cambio transforma cada salida, cada visita y cada momento en casa.`, cta1:(n:string)=>`¿Por dónde empiezas con un perro como ${n}?`, sub1:'Cuéntame qué está pasando y te digo qué haría yo primero.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  alcalde_amiguero: { name:'Alcalde Amiguero', emoji:'🟡', energy:'Intenso', rec:(n:string)=>`${n} ama a todo el mundo — y ese amor no tiene filtro ni freno. Salta, jala, invade el espacio... y tú terminas disculpándote con todos en el parque.`, myth:"'Es que es muy amistoso' — todos lo dicen. Pero amistoso y sin control no es lo mismo.", body:'Lo que está pasando es que aprendió que lanzarse y empujar funciona — porque históricamente le ha dado acceso a lo que más quiere: contacto social. No tiene freno porque nunca aprendió que esperar también tiene recompensa. No es mal carácter. Es una historia de aprendizaje que se puede reescribir.', needs:['Aprender a esperar antes de tener acceso a lo que quiere','Control de impulsos específicamente en contextos sociales','Saludos controlados como comportamiento que vale la pena'], bridge:(n:string)=>`Cuando ${n} entienda que la calma abre puertas — literalmente — todo cambia para él y para ti.`, cta1:(n:string)=>`¿Quieres que ${n} aprenda a saludar sin drama?`, sub1:'Escríbeme y hablamos de qué está pasando exactamente.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  protector_preocupado: { name:'Protector Preocupado', emoji:'🟠', energy:'Defensivo', rec:(n:string)=>`${n} ladra, se tensa o reacciona cuando algo le preocupa — y tú ya aprendiste qué situaciones lo van a disparar. Caminar con él a veces se siente como anticipar una crisis que no puedes evitar.`, myth:"Es fácil pensar que es agresivo, dominante o simplemente 'así es'. Ninguna de esas cosas es lo que está pasando.", body:'Lo que está mostrando es miedo o inseguridad — no agresión. Aprendió que cuando ladra o se lanza, las cosas que lo asustan se van, y eso refuerza exactamente la conducta que más te preocupa. No está siendo malo. Está haciendo lo único que sabe hacer cuando se siente inseguro.', needs:['Construir seguridad emocional primero — antes de trabajar la reactividad','Exposición gradual con respuestas alternativas al ladrido y al jalón','Un perro que se siente seguro no necesita ponerse a la defensiva'], bridge:(n:string)=>`Este proceso requiere paciencia y un plan claro — pero cuando ${n} empiece a sentirse seguro, los cambios son profundos y duraderos.`, cta1:(_n:string)=>'Esto tiene solución — y no requiere corrección ni castigo.', sub1:'Cuéntame qué situaciones lo disparan y por dónde vamos.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  dramatico: { name:'Dramático', emoji:'🟣', energy:'Volátil', rec:(n:string)=>`${n} puede estar tranquilo un momento y al siguiente estar en modo volcán — ladrando, jalando o haciendo drama total. No hay punto medio: o está bien o está completamente desbordado.`, myth:'Muchos lo ven como agresividad o mal temperamento. Pero lo que está pasando no es agresión — es frustración.', body:'Cuando quiere algo y no puede tenerlo, su tolerancia se agota muy rápido. Y en algún punto aprendió que escalar el drama a veces funciona. No es peligroso ni roto. Su sistema emocional simplemente no aprendió aún a manejar la espera.', needs:['Tolerancia a la frustración — aprender que esperar también tiene recompensa','Bajar la intensidad emocional antes de pedir comportamientos específicos','Que la calma abra lo que el drama no puede abrir'], bridge:(n:string)=>`Con el entrenamiento correcto, ${n} puede aprender que no necesita explotar para conseguir lo que quiere.`, cta1:(n:string)=>`¿Quieres entender qué dispara a ${n} y cómo manejarlo?`, sub1:'Escríbeme y hablamos de qué está pasando exactamente.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  independiente: { name:'Independiente', emoji:'🔵', energy:'Desconectado', rec:(n:string)=>`Le hablas y no voltea. Lo llamas y sigue olfateando. En casa te hace caso — afuera es como si no existieras. ${n} tiene su propio mundo, y tú no siempre estás incluida.`, myth:'Esto se interpreta casi siempre como terquedad o dominancia. Ninguna de las dos cosas es lo que está pasando.', body:'Lo que está pasando es más simple: el mundo afuera le ofrece más recompensa que tú en este momento. No es personal. Es que todavía no descubrió que trabajar contigo vale más la pena que seguir ese olor.', needs:['Construir valor de reforzamiento contigo — tú necesitas competir con el entorno','Conexión y engagement como base, antes de exigir obediencia','Recall confiable como primer objetivo medible y real'], bridge:(n:string)=>`Cuando ${n} descubra que orientarse hacia ti predice cosas buenas, todo lo demás se vuelve mucho más fácil.`, cta1:(n:string)=>`El recall confiable de ${n} empieza aquí — y es más rápido de lo que crees.`, sub1:'Cuéntame cómo es afuera y por dónde empezamos.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  sombra: { name:'Sombra', emoji:'⚫', energy:'Dependiente', rec:(n:string)=>`${n} te sigue a todos lados, se angustia cuando no te ve y no puede quedarse solo sin que algo pase. Lo que muchos ven como amor total, tú sabes que a veces se siente agotador — para los dos.`, myth:"'Es que te quiere mucho' — todos lo dicen. Pero lo que muestra no es solo amor. Es dependencia emocional.", body:'No tiene todavía las habilidades para regularse solo. Tú te convertiste en su única fuente de calma — y eso es mucho peso para los dos. No está mal apegado ni es un perro dañado. Simplemente nunca aprendió que también puede estar bien cuando está solo.', needs:['Desarrollar autonomía — la calma independiente como habilidad entrenada','Tolerancia gradual a la separación, sin ansiedad en el proceso','Momentos y espacios propios que aprenda a disfrutar'], bridge:(n:string)=>`Un perro con autonomía es más equilibrado, más feliz — y tú puedes moverte por tu casa sin escolta permanente.`, cta1:(n:string)=>`La independencia de ${n} se entrena — con calma y sin drama.`, sub1:'Escríbeme y hablamos de cómo está siendo esto en casa.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  genio_selectivo: { name:'Genio Selectivo', emoji:'🟢', energy:'Condicional', rec:(n:string)=>`En casa te hace caso perfecto. Afuera es como si nunca hubiera aprendido nada. ${n} sabe exactamente lo que le pides — solo que decide cuándo vale la pena hacerlo.`, myth:"Esto se lee casi siempre como manipulación o que 'el perro te está probando'. No es ninguna de las dos cosas.", body:'Lo que está pasando es que aprendió los comportamientos en un contexto — y nadie le enseñó que aplican en todos los demás. Afuera, el entorno compite con tus instrucciones y gana. Por ahora. No está eligiendo ignorarte. Está respondiendo exactamente como su historia de entrenamiento le enseñó a responder.', needs:['Generalizar lo que ya sabe a diferentes entornos y niveles de distracción','Consistencia en el reforzamiento — que responder siempre valga la pena','Entrenamiento en contextos reales, no solo dentro de casa'], bridge:(n:string)=>`Cuando las reglas sean las mismas en todos lados, ${n} va a dejar de "elegir" — porque la respuesta correcta siempre va a tener valor.`, cta1:(n:string)=>`Lo que ${n} ya sabe puede funcionar en cualquier lugar.`, sub1:'Cuéntame en qué situaciones te falla y por dónde empezamos.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
+  oportunista: { name:'Oportunista', emoji:'🟤', energy:'Oportunista', rec:(n:string)=>`${n} roba comida, destruye cosas, se lanza hacia lo que le interesa — y lo hace con una eficiencia que casi da risa. Sabe exactamente lo que quiere y siempre encuentra la manera de conseguirlo.`, myth:"Es tentador pensar que lo hace con intención, que es 'malicioso' o que actúa por despecho. No es ninguna de esas cosas.", body:'Lo que está pasando es más simple: esas conductas le funcionan y le funcionan bien. El mundo le paga mejor que tú en este momento. No es un perro malo. Es un perro muy bueno encontrando recompensas donde las hay.', needs:['Manejo del entorno — evitar que las conductas indeseadas sigan siendo rentables','Alternativas que también valgan la pena y que pueda elegir en su lugar','Construir contigo una historia de reforzamiento que compita con el entorno'], bridge:(n:string)=>`Cuando tú seas la fuente más predecible de cosas buenas, ${n} va a preferir trabajar contigo — porque eso también tiene sentido para él.`, cta1:(n:string)=>`Cambiar la ecuación de ${n} es más directo de lo que parece.`, sub1:'Cuéntame qué conductas te están volviendo loca y empezamos ahí.', cta2:(n:string)=>`Mike ya sabe cómo ayudar a ${n}.` },
 };
 
 function calcScore(answers: any[]) {
@@ -221,93 +167,36 @@ async function submitToSheets(payload: Record<string, any>) {
   try { await fetch(SHEETS_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) }); } catch(_){}
 }
 
-const css = `
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.app{max-width:440px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:white}
-.btn-green{background:#2AC400;color:#0F2451;border:none;border-radius:8px;padding:14px 24px;font-size:16px;font-weight:700;cursor:pointer;width:100%}.btn-green:hover{background:#22A000}.btn-green:disabled{opacity:0.4;cursor:not-allowed}
-.btn-wa{background:#25D366;color:white;border:none;border-radius:8px;padding:16px 24px;font-size:15px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}.btn-wa:hover{background:#1FB855}
-.btn-navy{background:#0F2451;color:white;border:none;border-radius:8px;padding:16px 24px;font-size:15px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
-.ans-card{background:white;border:1.5px solid #E2E8F0;border-radius:10px;padding:14px 16px;cursor:pointer;font-size:14px;color:#2D3748;text-align:left;width:100%;transition:all 0.15s;line-height:1.5}.ans-card:hover{border-color:#0F2451;background:#F7F9FF}.ans-card.sel{background:#0F2451;color:white;border-color:#0F2451}
-.input-field{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:14px 16px;font-size:16px;outline:none;color:#2D3748;background:white}.input-field:focus{border-color:#0F2451}
-@media(prefers-color-scheme:dark){.input-field{background:#1a2a4a;color:white;border-color:#2d4a7a}.input-field::placeholder{color:rgba(255,255,255,0.45)}select.input-field option{background:#1a2a4a;color:white}}
-.myth-box{background:#FFF7ED;border-left:4px solid #2AC400;border-radius:0 8px 8px 0;padding:14px 16px;font-style:italic;color:#2D3748;font-size:14px;line-height:1.6}
-.need-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #E2E8F0;font-size:13px;color:#4A5568;line-height:1.5}.need-item:last-child{border-bottom:none}
-.sec-label{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#2AC400;margin-bottom:8px}
-.ghost-btn{background:none;border:none;color:#718096;font-size:13px;cursor:pointer;padding:8px 0}
-.siguiente-wrap{overflow:hidden;transition:max-height 0.25s ease,opacity 0.25s ease}.siguiente-wrap.visible{max-height:80px;opacity:1}.siguiente-wrap.hidden{max-height:0;opacity:0}
-.hint-text{font-size:12px;color:#718096;font-style:italic;margin-bottom:14px;padding:8px 12px;background:#F5F5F4;border-radius:6px}
-.pre-cta-block{background:#F0F7FF;border-left:4px solid #0F2451;border-radius:0 8px 8px 0;padding:16px 18px;margin-bottom:16px;font-size:14px;color:#2D3748;line-height:1.7}
-`;
+const css = `*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.app{max-width:440px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:white}.btn-green{background:#2AC400;color:#0F2451;border:none;border-radius:8px;padding:14px 24px;font-size:16px;font-weight:700;cursor:pointer;width:100%}.btn-green:hover{background:#22A000}.btn-green:disabled{opacity:0.4;cursor:not-allowed}.btn-wa{background:#25D366;color:white;border:none;border-radius:8px;padding:16px 24px;font-size:15px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}.btn-wa:hover{background:#1FB855}.btn-navy{background:#0F2451;color:white;border:none;border-radius:8px;padding:16px 24px;font-size:15px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}.ans-card{background:white;border:1.5px solid #E2E8F0;border-radius:10px;padding:14px 16px;cursor:pointer;font-size:14px;color:#2D3748;text-align:left;width:100%;transition:all 0.15s;line-height:1.5}.ans-card:hover{border-color:#0F2451;background:#F7F9FF}.ans-card.sel{background:#0F2451;color:white;border-color:#0F2451}.input-field{width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:14px 16px;font-size:16px;outline:none;color:#2D3748;background:white}.input-field:focus{border-color:#0F2451}@media(prefers-color-scheme:dark){.input-field{background:#1a2a4a;color:white;border-color:#2d4a7a}.input-field::placeholder{color:rgba(255,255,255,0.45)}select.input-field option{background:#1a2a4a;color:white}}.myth-box{background:#FFF7ED;border-left:4px solid #2AC400;border-radius:0 8px 8px 0;padding:14px 16px;font-style:italic;color:#2D3748;font-size:14px;line-height:1.6}.need-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #E2E8F0;font-size:13px;color:#4A5568;line-height:1.5}.need-item:last-child{border-bottom:none}.sec-label{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#2AC400;margin-bottom:8px}.ghost-btn{background:none;border:none;color:#718096;font-size:13px;cursor:pointer;padding:8px 0}.siguiente-wrap{overflow:hidden;transition:max-height 0.25s ease,opacity 0.25s ease}.siguiente-wrap.visible{max-height:80px;opacity:1}.siguiente-wrap.hidden{max-height:0;opacity:0}.hint-text{font-size:12px;color:#718096;font-style:italic;margin-bottom:14px;padding:8px 12px;background:#F5F5F4;border-radius:6px}.pre-cta-block{background:#F0F7FF;border-left:4px solid #0F2451;border-radius:0 8px 8px 0;padding:16px 18px;margin-bottom:16px;font-size:14px;color:#2D3748;line-height:1.7}`;
 
-function ProgBar({n,total}:{n:number;total:number}) {
-  return <div style={{background:'#E2E8F0',borderRadius:4,height:5,width:'100%',overflow:'hidden'}}><div style={{background:GREEN,height:'100%',width:`${(n/total)*100}%`,borderRadius:4,transition:'width 0.3s ease'}}/></div>;
-}
+function ProgBar({n,total}:{n:number;total:number}) { return <div style={{background:'#E2E8F0',borderRadius:4,height:5,width:'100%',overflow:'hidden'}}><div style={{background:GREEN,height:'100%',width:`${(n/total)*100}%`,borderRadius:4,transition:'width 0.3s ease'}}/></div>; }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RADAR CHART — FIX: viewBox 310×255, center (155,120), labels at r+34
-// Labels "Control Social" and "Auto-ref." no longer clip at any edge.
-// ══════════════════════════════════════════════════════════════════════════════
 function MiniRadar({avg}:{avg:Record<string,number>}) {
   const cx=155, cy=120, r=78, n=TRAITS.length, labelR=r+34;
-  const pts = TRAITS.map((t,i) => {
-    const a=(i/n)*2*Math.PI-Math.PI/2; const v=(avg[t]-1)/4;
-    return { x:cx+r*v*Math.cos(a), y:cy+r*v*Math.sin(a) };
-  });
+  const pts = TRAITS.map((t,i) => { const a=(i/n)*2*Math.PI-Math.PI/2; const v=(avg[t]-1)/4; return { x:cx+r*v*Math.cos(a), y:cy+r*v*Math.sin(a) }; });
   return (
     <svg viewBox="0 0 310 255" width="100%" style={{maxWidth:280,display:'block',margin:'0 auto'}}>
-      {[0.25,0.5,0.75,1].map((f,fi) => {
-        const gp=TRAITS.map((_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return`${cx+r*f*Math.cos(a)},${cy+r*f*Math.sin(a)}`;}).join(' ');
-        return <polygon key={fi} points={gp} fill="none" stroke="#E2E8F0" strokeWidth={1}/>;
-      })}
+      {[0.25,0.5,0.75,1].map((f,fi) => { const gp=TRAITS.map((_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return`${cx+r*f*Math.cos(a)},${cy+r*f*Math.sin(a)}`;}).join(' '); return <polygon key={fi} points={gp} fill="none" stroke="#E2E8F0" strokeWidth={1}/>; })}
       {TRAITS.map((_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return <line key={i} x1={cx} y1={cy} x2={cx+r*Math.cos(a)} y2={cy+r*Math.sin(a)} stroke="#E2E8F0" strokeWidth={1}/>;
       })}
       <polygon points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill="#0F2451" fillOpacity={0.35} stroke="#0F2451" strokeWidth={2}/>
-      {TRAITS.map((_,i)=>{
-        const a=(i/n)*2*Math.PI-Math.PI/2;
-        return <text key={i} x={cx+labelR*Math.cos(a)} y={cy+labelR*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize={11} fill="#4A5568" fontWeight={500}>{TRAIT_LABELS[i]}</text>;
-      })}
+      {TRAITS.map((_,i)=>{ const a=(i/n)*2*Math.PI-Math.PI/2; return <text key={i} x={cx+labelR*Math.cos(a)} y={cy+labelR*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize={11} fill="#4A5568" fontWeight={500}>{TRAIT_LABELS[i]}</text>; })}
     </svg>
   );
 }
 
-function CredentialLogos() {
-  return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-    {[{src:CCPDT_LOGO,alt:'CCPDT',label:'Certificado por el consejo internacional de entrenadores profesionales'},{src:APDT_LOGO,alt:'APDT',label:'Miembro de la asociación internacional de entrenadores profesionales'}].map((item,i)=>
-      <div key={i} style={{padding:'14px 10px',background:'white',borderRadius:8,textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-        <img src={item.src} alt={item.alt} style={{height:44,objectFit:'contain'}}/><div style={{fontSize:11,color:DGREY,lineHeight:1.4}}>{item.label}</div>
-      </div>
-    )}
-  </div>;
-}
+function CredentialLogos() { return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>{[{src:CCPDT_LOGO,alt:'CCPDT',label:'Certificado por el consejo internacional de entrenadores profesionales'},{src:APDT_LOGO,alt:'APDT',label:'Miembro de la asociación internacional de entrenadores profesionales'}].map((item,i)=><div key={i} style={{padding:'14px 10px',background:'white',borderRadius:8,textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}><img src={item.src} alt={item.alt} style={{height:44,objectFit:'contain'}}/><div style={{fontSize:11,color:DGREY,lineHeight:1.4}}>{item.label}</div></div>)}</div>; }
 
-function Testimonial() {
-  return <div style={{background:'white',borderRadius:8,padding:'14px'}}>
-    <p style={{fontSize:13,color:DGREY,fontStyle:'italic',lineHeight:1.6,marginBottom:6}}>"Pensé que mi perro simplemente era difícil. Mike me explicó qué estaba pasando realmente — y en tres semanas vi la diferencia."</p>
-    <p style={{fontSize:11,color:'#718096'}}>— Cliente Habla Perro, Cuernavaca</p>
-  </div>;
-}
+function Testimonial() { return <div style={{background:'white',borderRadius:8,padding:'14px'}}><p style={{fontSize:13,color:DGREY,fontStyle:'italic',lineHeight:1.6,marginBottom:6}}>"Pensé que mi perro simplemente era difícil. Mike me explicó qué estaba pasando realmente — y en tres semanas vi la diferencia."</p><p style={{fontSize:11,color:'#718096'}}>— Cliente Habla Perro, Cuernavaca</p></div>; }
 
 function ResultBody({c,c2,dogName,avg,showRadar,isMixed,restart,waUrl,preCTAText}:{c:any;c2?:any;dogName:string;avg:Record<string,number>;showRadar:boolean;isMixed:boolean;restart:()=>void;waUrl:string;preCTAText:string}) {
   const combinedNeeds:string[] = isMixed&&c2 ? [...c.needs,...c2.needs.filter((n:string)=>!c.needs.includes(n))] : c.needs;
   const [preCTAPara,ctaPara] = preCTAText.split('\n\n');
   return <>
     {showRadar && <div style={{background:WARM,padding:'20px 24px'}}><p className="sec-label">Perfil de {dogName}</p><MiniRadar avg={avg}/><p style={{fontSize:11,color:'#718096',textAlign:'center',marginTop:6}}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p></div>}
-    <div style={{padding:'20px 24px 0'}}>
-      <p className="sec-label">Lo que está pasando en realidad</p>
-      <div className="myth-box" style={{marginBottom:14}}>«{c.myth}»</div>
-      <p style={{color:DGREY,fontSize:14,lineHeight:1.7,marginBottom:20}}>{c.body}</p>
-      {isMixed&&c2&&<><div className="myth-box" style={{marginBottom:14,borderLeftColor:'#92BBE3'}}>«{c2.myth}»</div><p style={{color:DGREY,fontSize:14,lineHeight:1.7,marginBottom:20}}>{c2.body}</p></>}
-      <p className="sec-label">Lo que necesita {dogName}</p>
-      <div style={{marginBottom:8}}>{combinedNeeds.map((nd:string,i:number)=><div key={i} className="need-item"><span style={{color:GREEN,fontSize:15,flexShrink:0}}>✓</span><span>{nd}</span></div>)}</div>
-      <p style={{color:DGREY,fontSize:14,lineHeight:1.7,marginTop:10,marginBottom:20}}>{c.bridge(dogName)}</p>
-    </div>
+    <div style={{padding:'20px 24px 0'}}><p className="sec-label">Lo que está pasando en realidad</p><div className="myth-box" style={{marginBottom:14}}>«{c.myth}»</div><p style={{color:DGREY,fontSize:14,lineHeight:1.7,marginBottom:20}}>{c.body}</p>{isMixed&&c2&&<><div className="myth-box" style={{marginBottom:14,borderLeftColor:'#92BBE3'}}>«{c2.myth}»</div><p style={{color:DGREY,fontSize:14,lineHeight:1.7,marginBottom:20}}>{c2.body}</p></>}<p className="sec-label">Lo que necesita {dogName}</p><div style={{marginBottom:8}}>{combinedNeeds.map((nd:string,i:number)=><div key={i} className="need-item"><span style={{color:GREEN,fontSize:15,flexShrink:0}}>✓</span><span>{nd}</span></div>)}</div><p style={{color:DGREY,fontSize:14,lineHeight:1.7,marginTop:10,marginBottom:20}}>{c.bridge(dogName)}</p></div>
     <div style={{padding:'0 24px 4px'}}><div className="pre-cta-block"><p style={{marginBottom:10}}>{preCTAPara}</p><p style={{fontStyle:'italic',color:'#4A5568'}}>{ctaPara}</p></div></div>
-    <div style={{background:NAVY,padding:'24px'}}>
-      <h3 style={{color:'white',fontSize:17,fontWeight:700,marginBottom:6,lineHeight:1.4}}>{c.cta1(dogName)}</h3>
-      <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginBottom:16}}>{c.sub1}</p>
-      <a href={waUrl} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a>
-      <p style={{color:'rgba(255,255,255,0.4)',fontSize:11,textAlign:'center',marginTop:8}}>Sin compromiso · Solo una conversación</p>
-    </div>
+    <div style={{background:NAVY,padding:'24px'}}><h3 style={{color:'white',fontSize:17,fontWeight:700,marginBottom:6,lineHeight:1.4}}>{c.cta1(dogName)}</h3><p style={{color:'rgba(255,255,255,0.7)',fontSize:13,marginBottom:16}}>{c.sub1}</p><a href={waUrl} target="_blank" rel="noreferrer" className="btn-wa">💬 Escribirle a Mike por WhatsApp</a><p style={{color:'rgba(255,255,255,0.4)',fontSize:11,textAlign:'center',marginTop:8}}>Sin compromiso · Solo una conversación</p></div>
     <div style={{padding:'20px 24px',background:WARM}}><CredentialLogos/><Testimonial/></div>
     <div style={{padding:'16px 24px 24px',textAlign:'center'}}><button className="ghost-btn" onClick={restart}>Empezar de nuevo</button></div>
   </>;
@@ -333,121 +222,60 @@ export default function App() {
   const canStart=ownerName.trim()&&dogName.trim();
   const waUrl=buildWAUrl(ownerName,dogName);
 
-  useEffect(()=>{
-    if(screen!=='result'||!result) return;
-    if(!SHEETS_URL||SHEETS_URL.includes('PASTE_YOUR')) return;
-    const timer=setTimeout(()=>{try{
-      const appDiv=document.querySelector('.app') as HTMLElement; if(!appDiv) return;
-      const styleEl=document.querySelector('style'); const cssText=styleEl?(styleEl as HTMLStyleElement).innerText:'';
-      const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Habla Perro — ${dogName}</title><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}${cssText}</style></head><body>${appDiv.outerHTML}</body></html>`;
-      fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'html_snapshot',owner_name:ownerName,dog_name:dogName,html})});
-    }catch(_){}},2000);
-    return ()=>clearTimeout(timer);
-  },[screen,result]);
+  // ── COMPLETO: pixel-perfect PDF screenshot via html2canvas + jsPDF ─────────
+  useEffect(() => {
+    if (screen !== 'result' || !result) return;
+    if (!SHEETS_URL || SHEETS_URL.includes('PASTE_YOUR')) return;
+    const timer = setTimeout(async () => {
+      try {
+        const appDiv = document.querySelector('.app') as HTMLElement;
+        if (!appDiv) return;
+        const canvas = await html2canvas(appDiv, { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 440, scrollY: -window.scrollY });
+        const imgW = canvas.width; const imgH = canvas.height;
+        const pdfW = imgW / 2; const pdfH = imgH / 2;
+        const pdf = new jsPDF({ orientation: pdfH > pdfW ? 'portrait' : 'landscape', unit: 'px', format: [pdfW, pdfH], hotfixes: ['px_scaling'] });
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pdfW, pdfH);
+        const base64 = pdf.output('datauristring').split(',')[1];
+        fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ type: 'pdf_snapshot', owner_name: ownerName, dog_name: dogName, pdf_base64: base64 }) });
+      } catch (_) {}
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [screen, result]);
 
   useEffect(()=>{
-    if(screen!=='loading') return;
-    let p=0;
-    const iv=setInterval(()=>{
-      p+=2;setProgress(p);
-      if(p>=100){clearInterval(iv);
-        const res=calcScore(answers); setResult(res);
+    if(screen!=='loading') return; let p=0;
+    const iv=setInterval(()=>{ p+=2;setProgress(p);
+      if(p>=100){clearInterval(iv); const res=calcScore(answers); setResult(res);
         const preText=buildPreCTA(res.cat,res.mixed?res.cat2:null,res.mixed); setPreCTAText(preText);
         const answer_texts=answers.map((a,i)=>({q:Q_LABELS[i]||`Pregunta ${i+1}`,a:a.t}));
-        submitToSheets({
-          timestamp:new Date().toISOString(),
-          owner_name:ownerName, dog_name:dogName,
-          dog_breed:dogBreed||'—', dog_age:dogAge||'—', phone:'—',
-          category:res.cat, category2:res.mixed?res.cat2:'—', mixed:res.mixed,
-          activacion:+res.avg.activacion.toFixed(2), impulsos:+res.avg.impulsos.toFixed(2),
-          sensibilidad:+res.avg.sensibilidad.toFixed(2), social:+res.avg.social.toFixed(2),
-          conexion:+res.avg.conexion.toFixed(2), auto_ref:+res.avg.auto_ref.toFixed(2),
-          answer_texts: answer_texts,
-        });
+        submitToSheets({ timestamp:new Date().toISOString(), owner_name:ownerName, dog_name:dogName, dog_breed:dogBreed||'—', dog_age:dogAge||'—', phone:'—', category:res.cat, category2:res.mixed?res.cat2:'—', mixed:res.mixed, activacion:+res.avg.activacion.toFixed(2), impulsos:+res.avg.impulsos.toFixed(2), sensibilidad:+res.avg.sensibilidad.toFixed(2), social:+res.avg.social.toFixed(2), conexion:+res.avg.conexion.toFixed(2), auto_ref:+res.avg.auto_ref.toFixed(2), answer_texts });
         setTimeout(()=>setScreen('result'),300);
       }
-    },30);
-    return ()=>clearInterval(iv);
+    },30); return ()=>clearInterval(iv);
   },[screen]);
 
   const handleSelect=(a:any,idx:number)=>{setSel(idx);setPendingAnswer(a);};
   const handleSiguiente=()=>{if(pendingAnswer===null)return;const na=[...answers,pendingAnswer];setAnswers(na);setSel(null);setPendingAnswer(null);if(qIndex<QUESTIONS.length-1){setQIndex(qIndex+1);}else{setScreen('loading');}};
 
-  if(screen==='intro') return <>
-    <style>{css}</style>
-    <div className="app" style={{paddingBottom:40}}>
-      <div style={{background:NAVY,padding:'48px 24px 40px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
-        <img src={LOGO_WHITE} alt="Habla Perro" style={{height:80,objectFit:'contain',marginBottom:32}}/>
-        <h1 style={{color:'white',fontSize:26,fontWeight:700,lineHeight:1.3,marginBottom:14}}>¿Por qué tu perro<br/>se comporta así?</h1>
-        <p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.7,maxWidth:320}}>En menos de 2 minutos vas a entender qué está pasando con tu perro y qué puedes hacer al respecto.</p>
-      </div>
-      <div style={{padding:'28px 24px'}}>
-        <div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Tu nombre</label><input className="input-field" type="text" placeholder="¿Cómo te llamas?" value={ownerName} onChange={e=>setOwnerName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div>
-        <div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>¿Cómo se llama tu perro?</label><input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName} onChange={e=>setDogName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div>
-        <div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Raza</label><input className="input-field" type="text" placeholder="Ej: Labrador, Mestizo, Chihuahua..." value={dogBreed} onChange={e=>setDogBreed(e.target.value)}/></div>
-        <div style={{marginBottom:20}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Edad del perro</label><select className="input-field" value={dogAge} onChange={e=>setDogAge(e.target.value)} style={{appearance:'auto'}}><option value="">Selecciona...</option>{Array.from({length:15},(_,i)=>i+1).map(n=><option key={n} value={String(n)}>{n} {n===1?'año':'años'}</option>)}</select></div>
-        <button className="btn-green" onClick={()=>canStart&&setScreen('quiz')} disabled={!canStart}>Empezar ahora →</button>
-        <p style={{textAlign:'center',fontSize:12,color:'#718096',marginTop:12}}>6 preguntas · 2 minutos · resultado inmediato</p>
-        <div style={{marginTop:24,padding:'14px 16px',background:WARM,borderRadius:10,display:'flex',alignItems:'center',gap:12}}><img src={CCPDT_LOGO} alt="CCPDT" style={{height:36,objectFit:'contain',flexShrink:0}}/><p style={{fontSize:12,color:DGREY,lineHeight:1.5}}>Certificado por el consejo internacional<br/>de entrenadores profesionales</p></div>
-      </div>
-    </div>
-  </>;
+  if(screen==='intro') return <><style>{css}</style><div className="app" style={{paddingBottom:40}}><div style={{background:NAVY,padding:'48px 24px 40px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}><img src={LOGO_WHITE} alt="Habla Perro" style={{height:80,objectFit:'contain',marginBottom:32}}/><h1 style={{color:'white',fontSize:26,fontWeight:700,lineHeight:1.3,marginBottom:14}}>¿Por qué tu perro<br/>se comporta así?</h1><p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.7,maxWidth:320}}>En menos de 2 minutos vas a entender qué está pasando con tu perro y qué puedes hacer al respecto.</p></div><div style={{padding:'28px 24px'}}><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Tu nombre</label><input className="input-field" type="text" placeholder="¿Cómo te llamas?" value={ownerName} onChange={e=>setOwnerName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>¿Cómo se llama tu perro?</label><input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName} onChange={e=>setDogName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Raza</label><input className="input-field" type="text" placeholder="Ej: Labrador, Mestizo, Chihuahua..." value={dogBreed} onChange={e=>setDogBreed(e.target.value)}/></div><div style={{marginBottom:20}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Edad del perro</label><select className="input-field" value={dogAge} onChange={e=>setDogAge(e.target.value)} style={{appearance:'auto'}}><option value="">Selecciona...</option>{Array.from({length:15},(_,i)=>i+1).map(n=><option key={n} value={String(n)}>{n} {n===1?'año':'años'}</option>)}</select></div><button className="btn-green" onClick={()=>canStart&&setScreen('quiz')} disabled={!canStart}>Empezar ahora →</button><p style={{textAlign:'center',fontSize:12,color:'#718096',marginTop:12}}>6 preguntas · 2 minutos · resultado inmediato</p><div style={{marginTop:24,padding:'14px 16px',background:WARM,borderRadius:10,display:'flex',alignItems:'center',gap:12}}><img src={CCPDT_LOGO} alt="CCPDT" style={{height:36,objectFit:'contain',flexShrink:0}}/><p style={{fontSize:12,color:DGREY,lineHeight:1.5}}>Certificado por el consejo internacional<br/>de entrenadores profesionales</p></div></div></div></>;
 
-  if(screen==='quiz'){const q=QUESTIONS[qIndex];return <>
-    <style>{css}</style>
-    <div className="app" style={{paddingBottom:32}}>
-      <div style={{background:NAVY,padding:'18px 24px 20px'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,minHeight:28}}>
-          <button className="ghost-btn" style={{color:'rgba(255,255,255,0.6)'}} onClick={()=>{if(qIndex===0){setScreen('intro');}else{setQIndex(qIndex-1);setAnswers(answers.slice(0,-1));setSel(null);setPendingAnswer(null);}}}>← Anterior</button>
-          <img src={LOGO_WHITE} alt="Habla Perro" style={{height:26,objectFit:'contain'}}/>
-        </div>
-        <ProgBar n={qIndex} total={QUESTIONS.length}/>
-        <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:5,textAlign:'right'}}>{qIndex+1} de {QUESTIONS.length}</div>
-      </div>
-      <div style={{padding:'20px 24px 24px'}}>
-        <div style={{fontSize:16,fontWeight:600,color:NAVY,lineHeight:1.5,marginBottom:14}}>
-          {(q as any).qHighlight ? <>{q.q(dogName)} <span style={{textDecoration:'underline',fontWeight:700}}>{(q as any).qHighlight}</span>{(q as any).qSuffix}</> : q.q(dogName)}
-        </div>
-        <div className="hint-text">Elige la opción que más se acerque a lo que hace {dogName}.</div>
-        <div style={{display:'flex',flexDirection:'column',gap:10}}>
-          {q.answers.map((a,i)=><button key={i} className={`ans-card${sel===i?' sel':''}`} onClick={()=>handleSelect(a,i)}><span style={{fontSize:12,fontWeight:700,color:sel===i?'rgba(255,255,255,0.6)':GREEN,marginRight:8}}>{['A','B','C','D','E'][i]}</span>{a.t}</button>)}
-        </div>
-        <div className={`siguiente-wrap ${sel!==null?'visible':'hidden'}`} style={{marginTop:16}}><button className="btn-green" onClick={handleSiguiente} disabled={sel===null}>{qIndex<QUESTIONS.length-1?'Siguiente →':'Ver resultado →'}</button></div>
-      </div>
-    </div>
-  </>;
-  }
+  if(screen==='quiz'){const q=QUESTIONS[qIndex];return <><style>{css}</style><div className="app" style={{paddingBottom:32}}><div style={{background:NAVY,padding:'18px 24px 20px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,minHeight:28}}><button className="ghost-btn" style={{color:'rgba(255,255,255,0.6)'}} onClick={()=>{if(qIndex===0){setScreen('intro');}else{setQIndex(qIndex-1);setAnswers(answers.slice(0,-1));setSel(null);setPendingAnswer(null);}}}>← Anterior</button><img src={LOGO_WHITE} alt="Habla Perro" style={{height:26,objectFit:'contain'}}/></div><ProgBar n={qIndex} total={QUESTIONS.length}/><div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:5,textAlign:'right'}}>{qIndex+1} de {QUESTIONS.length}</div></div><div style={{padding:'20px 24px 24px'}}><div style={{fontSize:16,fontWeight:600,color:NAVY,lineHeight:1.5,marginBottom:14}}>{(q as any).qHighlight ? <>{q.q(dogName)} <span style={{textDecoration:'underline',fontWeight:700}}>{(q as any).qHighlight}</span>{(q as any).qSuffix}</> : q.q(dogName)}</div><div className="hint-text">Elige la opción que más se acerque a lo que hace {dogName}.</div><div style={{display:'flex',flexDirection:'column',gap:10}}>{q.answers.map((a,i)=><button key={i} className={`ans-card${sel===i?' sel':''}`} onClick={()=>handleSelect(a,i)}><span style={{fontSize:12,fontWeight:700,color:sel===i?'rgba(255,255,255,0.6)':GREEN,marginRight:8}}>{['A','B','C','D','E'][i]}</span>{a.t}</button>)}</div><div className={`siguiente-wrap ${sel!==null?'visible':'hidden'}`} style={{marginTop:16}}><button className="btn-green" onClick={handleSiguiente} disabled={sel===null}>{qIndex<QUESTIONS.length-1?'Siguiente →':'Ver resultado →'}</button></div></div></div></>;}
 
-  if(screen==='loading') return <>
-    <style>{css}</style>
-    <div className="app" style={{background:NAVY,justifyContent:'center',alignItems:'center',padding:'40px 24px',minHeight:'100vh'}}>
-      <div style={{textAlign:'center'}}>
-        <img src={LOGO_WHITE} alt="Habla Perro" style={{height:52,objectFit:'contain',marginBottom:28}}/>
-        <h2 style={{color:'white',fontSize:20,fontWeight:600,marginBottom:8,lineHeight:1.4}}>Analizando el perfil<br/>de {dogName}...</h2>
-        <p style={{color:'rgba(255,255,255,0.6)',fontSize:13,lineHeight:1.6,maxWidth:260,margin:'0 auto 28px'}}>Cada perro tiene su propio patrón. Estamos encontrando el de {dogName}.</p>
-        <div style={{background:'rgba(255,255,255,0.15)',borderRadius:4,height:4,width:260,overflow:'hidden'}}><div style={{background:GREEN,height:'100%',width:`${progress}%`,transition:'width 0.03s linear'}}/></div>
-      </div>
-    </div>
-  </>;
+  if(screen==='loading') return <><style>{css}</style><div className="app" style={{background:NAVY,justifyContent:'center',alignItems:'center',padding:'40px 24px',minHeight:'100vh'}}><div style={{textAlign:'center'}}><img src={LOGO_WHITE} alt="Habla Perro" style={{height:52,objectFit:'contain',marginBottom:28}}/><h2 style={{color:'white',fontSize:20,fontWeight:600,marginBottom:8,lineHeight:1.4}}>Analizando el perfil<br/>de {dogName}...</h2><p style={{color:'rgba(255,255,255,0.6)',fontSize:13,lineHeight:1.6,maxWidth:260,margin:'0 auto 28px'}}>Cada perro tiene su propio patrón. Estamos encontrando el de {dogName}.</p><div style={{background:'rgba(255,255,255,0.15)',borderRadius:4,height:4,width:260,overflow:'hidden'}}><div style={{background:GREEN,height:'100%',width:`${progress}%`,transition:'width 0.03s linear'}}/></div></div></div></>;
 
   if(screen==='result'&&result){
-    const {cat,cat2,mixed,avg}=result;
-    const c=COPY[cat]; const c2m=mixed?COPY[cat2]:null;
+    const {cat,cat2,mixed,avg}=result; const c=COPY[cat]; const c2m=mixed?COPY[cat2]:null;
     if(!c){restart();return null;}
-    return <>
-      <style>{css}</style>
-      <div className="app" style={{paddingBottom:48}}>
-        <div style={{background:NAVY,padding:'28px 24px',textAlign:'center'}}>
-          <img src={LOGO_WHITE} alt="Habla Perro" style={{height:40,objectFit:'contain',display:'block',margin:'0 auto 16px'}}/>
-          <div style={{display:'inline-block',background:'rgba(42,196,0,0.2)',border:'1px solid rgba(42,196,0,0.4)',borderRadius:20,padding:'3px 14px',fontSize:11,color:GREEN,fontWeight:700,marginBottom:12}}>{mixed?'Perfil combinado':`El perfil de ${dogName}`}</div>
-          {mixed?<><h1 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.3,marginBottom:8}}>{dogName} tiene un perfil combinado</h1><p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.6,maxWidth:340,margin:'0 auto'}}>Algunos perros no encajan en una sola categoría. {dogName} muestra características de dos patrones — su entrenamiento necesita atender más de una cosa al mismo tiempo.</p></>
-          :<><div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',marginBottom:10}}><span style={{fontSize:32}}>{c.emoji}</span><h1 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2}}>{c.name}</h1></div><p style={{color:'rgba(255,255,255,0.8)',fontSize:14,lineHeight:1.6}}>{c.rec(dogName)}</p></>}
-        </div>
-        {mixed&&c2m&&<div style={{padding:'20px 24px 0'}}><p className="sec-label">Los dos perfiles de {dogName}</p><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:4}}>{[c,c2m].map((cc:any,i:number)=><div key={i} style={{background:WARM,borderRadius:10,padding:'16px 12px',textAlign:'center',border:`2px solid ${i===0?NAVY:'#E2E8F0'}`}}><div style={{fontSize:28,marginBottom:6}}>{cc.emoji}</div><div style={{fontSize:13,fontWeight:700,color:NAVY}}>{cc.name}</div><div style={{fontSize:11,color:DGREY,marginTop:4}}>{cc.energy}</div></div>)}</div></div>}
-        <div style={{background:WARM,padding:'20px 24px',marginTop:mixed?16:0}}><p className="sec-label">Perfil de {dogName}</p><MiniRadar avg={avg}/><p style={{fontSize:11,color:'#718096',textAlign:'center',marginTop:6}}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p></div>
-        <ResultBody c={c} c2={c2m??undefined} dogName={dogName} avg={avg} showRadar={false} isMixed={mixed} restart={restart} waUrl={waUrl} preCTAText={preCTAText}/>
+    return <><style>{css}</style><div className="app" style={{paddingBottom:48}}>
+      <div style={{background:NAVY,padding:'28px 24px',textAlign:'center'}}><img src={LOGO_WHITE} alt="Habla Perro" style={{height:40,objectFit:'contain',display:'block',margin:'0 auto 16px'}}/><div style={{display:'inline-block',background:'rgba(42,196,0,0.2)',border:'1px solid rgba(42,196,0,0.4)',borderRadius:20,padding:'3px 14px',fontSize:11,color:GREEN,fontWeight:700,marginBottom:12}}>{mixed?'Perfil combinado':`El perfil de ${dogName}`}</div>
+        {mixed?<><h1 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.3,marginBottom:8}}>{dogName} tiene un perfil combinado</h1><p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.6,maxWidth:340,margin:'0 auto'}}>Algunos perros no encajan en una sola categoría. {dogName} muestra características de dos patrones — su entrenamiento necesita atender más de una cosa al mismo tiempo.</p></>
+        :<><div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',marginBottom:10}}><span style={{fontSize:32}}>{c.emoji}</span><h1 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.2}}>{c.name}</h1></div><p style={{color:'rgba(255,255,255,0.8)',fontSize:14,lineHeight:1.6}}>{c.rec(dogName)}</p></>}
       </div>
-    </>;
+      {mixed&&c2m&&<div style={{padding:'20px 24px 0'}}><p className="sec-label">Los dos perfiles de {dogName}</p><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:4}}>{[c,c2m].map((cc:any,i:number)=><div key={i} style={{background:WARM,borderRadius:10,padding:'16px 12px',textAlign:'center',border:`2px solid ${i===0?NAVY:'#E2E8F0'}`}}><div style={{fontSize:28,marginBottom:6}}>{cc.emoji}</div><div style={{fontSize:13,fontWeight:700,color:NAVY}}>{cc.name}</div><div style={{fontSize:11,color:DGREY,marginTop:4}}>{cc.energy}</div></div>)}</div></div>}
+      <div style={{background:WARM,padding:'20px 24px',marginTop:mixed?16:0}}><p className="sec-label">Perfil de {dogName}</p><MiniRadar avg={avg}/><p style={{fontSize:11,color:'#718096',textAlign:'center',marginTop:6}}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p></div>
+      <ResultBody c={c} c2={c2m??undefined} dogName={dogName} avg={avg} showRadar={false} isMixed={mixed} restart={restart} waUrl={waUrl} preCTAText={preCTAText}/>
+    </div></>;
   }
   return null;
 }
