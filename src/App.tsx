@@ -529,6 +529,45 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [screen, result]);
 
+  // Auto-capture result screen as PDF → send to Drive
+  useEffect(() => {
+    if (screen !== 'result' || !result) return;
+    if (!SHEETS_URL || SHEETS_URL.includes('PASTE_YOUR')) return;
+    var captureAndSendPDF = function() {
+      var loadH2C = new Promise(function(resolve, reject) {
+        if (window.html2canvas) { resolve(null); return; }
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload = function() { resolve(null); }; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      var loadJsPDF = new Promise(function(resolve, reject) {
+        if (window.jspdf) { resolve(null); return; }
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = function() { resolve(null); }; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      Promise.all([loadH2C, loadJsPDF]).then(function() {
+        var appDiv = document.querySelector('.app');
+        if (!appDiv) return;
+        return window.html2canvas(appDiv, { scale:2, useCORS:true, allowTaint:true, scrollY:0, width:appDiv.scrollWidth, height:appDiv.scrollHeight });
+      }).then(function(canvas) {
+        if (!canvas) return;
+        var jsPDF = window.jspdf.jsPDF;
+        var imgData = canvas.toDataURL('image/jpeg', 0.88);
+        var pageW=210, pageH=297, imgW=pageW;
+        var imgH=(canvas.height*imgW)/canvas.width;
+        var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+        if(imgH<=pageH){pdf.addImage(imgData,'JPEG',0,0,imgW,imgH);}else{var y=0;while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);y+=pageH;}}
+        var b64 = pdf.output('datauristring').split(',')[1];
+        fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pdf_snapshot',owner_name:ownerName,dog_name:dogName,pdf_base64:b64})});
+      }).catch(function() {});
+    };
+    var timer = setTimeout(captureAndSendPDF, 5000);
+    return function() { clearTimeout(timer); };
+  }, [screen, result]);
+
   useEffect(() => {
     if (screen !== 'loading') return;
     let p = 0;
