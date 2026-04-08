@@ -539,8 +539,8 @@ export default function App() {
         var imgData = canvas.toDataURL('image/jpeg', 0.88);
         var pageW=210, pageH=297, imgW=pageW;
         var imgH=(canvas.height*imgW)/canvas.width;
-        var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-        if(imgH<=pageH){pdf.addImage(imgData,'JPEG',0,0,imgW,imgH);}else{var y=0;while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);y+=pageH;}}
+        var pdf = new jsPDF({orientation:'portrait',unit:'mm',format:[imgW,imgH]});
+        pdf.addImage(imgData,'JPEG',0,0,imgW,imgH);
         var b64 = pdf.output('datauristring').split(',')[1];
         fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'pdf_snapshot',owner_name:ownerName,dog_name:dogName,pdf_base64:b64})});
       }).catch(function() {});
