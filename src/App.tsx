@@ -475,12 +475,9 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, waUrl, p
         <Testimonial />
       </div>
 
-      {/* Second CTA */}
-      <div style={{ padding: '24px' }}>
-        <h3 style={{ color: NAVY, fontSize: 16, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta2(dogName)}</h3>
-        <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe a WhatsApp y cuéntale todo.</p>
-        <a href={waUrl} target="_blank" rel="noreferrer" className="btn-navy">💬 Hablar con Mike</a>
-        <button className="ghost-btn" onClick={restart} style={{ width: '100%', textAlign: 'center', marginTop: 8 }}>Empezar de nuevo</button>
+      {/* Restart only */}
+      <div style={{ padding: '16px 24px 24px', textAlign: 'center' }}>
+        <button className="ghost-btn" onClick={restart}>Empezar de nuevo</button>
       </div>
     </>
   );
