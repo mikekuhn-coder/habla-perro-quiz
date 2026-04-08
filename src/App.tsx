@@ -507,8 +507,88 @@ export default function App() {
   const canStart = ownerName.trim() && dogName.trim();
   const waUrl    = buildWAUrl(ownerName, dogName);
 
+  // After result renders: auto-capture as PDF → send to Drive
   useEffect(() => {
-    if (screen !== 'loading') return;
+    if (screen !== 'result' || !result) return;
+    if (!SHEETS_URL || SHEETS_URL.includes('PASTE_YOUR')) return;
+
+    const captureAndSendPDF = async () => {
+      try {
+        // Load html2canvas from CDN if not already loaded
+        if (!window.html2canvas) {
+          await new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            s.onload = () => resolve(); s.onerror = () => reject();
+            document.head.appendChild(s);
+          });
+        }
+        // Load jspdf from CDN if not already loaded
+        if (!window.jspdf) {
+          await new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            s.onload = () => resolve(); s.onerror = () => reject();
+            document.head.appendChild(s);
+          });
+        }
+
+        const appDiv = document.querySelector('.app') as HTMLElement;
+        if (!appDiv) return;
+
+        // Capture full scrollable height
+        const canvas = await window.html2canvas(appDiv, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          scrollY: 0,
+          width: appDiv.scrollWidth,
+          height: appDiv.scrollHeight,
+          windowWidth: appDiv.scrollWidth,
+          windowHeight: appDiv.scrollHeight,
+        });
+
+        const { jsPDF } = window.jspdf;
+        const imgData  = canvas.toDataURL('image/jpeg', 0.88);
+        const pageW    = 210; // A4 mm
+        const pageH    = 297;
+        const imgW     = pageW;
+        const imgH     = (canvas.height * imgW) / canvas.width;
+
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+        if (imgH <= pageH) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+        } else {
+          // Multi-page: slice into A4-height segments
+          let yOffset = 0;
+          while (yOffset < imgH) {
+            if (yOffset > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
+            yOffset += pageH;
+          }
+        }
+
+        const base64pdf = pdf.output('datauristring').split(',')[1];
+
+        // Send to Apps Script → saved to Drive automatically
+        fetch(SHEETS_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'pdf_snapshot',
+            owner_name: ownerName,
+            dog_name: dogName,
+            pdf_base64: base64pdf,
+          }),
+        });
+      } catch (_) { /* silent — PDF capture is best-effort */ }
+    };
+
+    // Wait 2s for full render, then capture
+    const timer = setTimeout(captureAndSendPDF, 2000);
+    return () => clearTimeout(timer);
+  }, [screen, result]);
     let p = 0;
     const iv = setInterval(() => {
       p += 2; setProgress(p);
