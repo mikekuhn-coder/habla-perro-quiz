@@ -5,10 +5,7 @@ const GREEN = '#2AC400';
 const WARM  = '#F5F5F4';
 const DGREY = '#4A5568';
 
-// WhatsApp number encoded to avoid plain-text scraping
 const WA_NUM = atob('NTI3Nzc2MTAxNjQ3');
-
-// Dynamic WA URL — personalized with owner and dog name
 const buildWAUrl = (ownerName: string, dogName: string) => {
   const msg = `Hola Mike, soy ${ownerName}. Acabo de hacer el quiz con ${dogName} y me gustaría saber más. 🐾`;
   return `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`;
@@ -18,13 +15,79 @@ const LOGO_WHITE = '/02-HP-Logo-Main-White.png';
 const CCPDT_LOGO = '/cpdt-ka-color-med.png';
 const APDT_LOGO  = '/APDT%20logo.png';
 
-// Google Apps Script endpoint
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwOYII3A9PnS8XOhkmgqlkzg8GsAZW_XGQkSA1Zj106QV9yq4PqkL2hyAdXOtzXSJo/exec';
 
 const TRAITS       = ['activacion','impulsos','sensibilidad','social','conexion','auto_ref'];
 const TRAIT_LABELS = ['Activación','Impulsos','Sensibilidad','Control Social','Conexión','Auto-ref.'];
 const VALID_CATS   = ['red_bull','alcalde_amiguero','protector_preocupado','dramatico','independiente','sombra','genio_selectivo','oportunista'];
 
+// ── PRE-CTA DATA — from developer handover doc ────────────────────────────────
+const PROFILE_DATA: Record<string, { intensity: 'high'|'medium'|'low'; objetivos: string[]; resultados: string[] }> = {
+  red_bull:             { intensity: 'medium', objetivos: ['calma','autocontrol','concentración'],                             resultados: ['bajar revoluciones','pensar antes de actuar','responder mejor en entornos estimulantes'] },
+  alcalde_amiguero:     { intensity: 'medium', objetivos: ['autocontrol social','modales','atención'],                         resultados: ['saludar sin desbordarse','respetar espacio','mantener control en presencia de otros'] },
+  protector_preocupado: { intensity: 'high',   objetivos: ['seguridad','regulación emocional','manejo de disparadores'],       resultados: ['reducir reactividad','sentirse más seguro','responder con más calma'] },
+  dramatico:            { intensity: 'high',   objetivos: ['tolerancia a la frustración','calma','control emocional'],         resultados: ['manejar mejor la frustración','esperar sin explotar','responder con más estabilidad'] },
+  independiente:        { intensity: 'low',    objetivos: ['conexión','motivación','atención al guía'],                        resultados: ['elegir más al dueño','responder mejor fuera de casa','mantener enfoque con distracciones'] },
+  sombra:               { intensity: 'medium', objetivos: ['independencia','seguridad emocional','calma'],                    resultados: ['estar tranquilo sin el dueño','ganar confianza','regularse sin dependencia'] },
+  genio_selectivo:      { intensity: 'low',    objetivos: ['consistencia','respuesta confiable','obediencia real'],            resultados: ['responder también fuera de casa','escuchar con distracciones','ser más predecible'] },
+  oportunista:          { intensity: 'medium', objetivos: ['hábitos','autocontrol','alternativas claras'],                    resultados: ['dejar de reforzar conductas no deseadas','tomar mejores decisiones','tener rutinas más estables'] },
+};
+
+// Combination key = sorted cat keys joined with '+'
+const COMBINATIONS: Record<string, { objetivos: string[]; resultados: string[] }> = {
+  'dramatico+red_bull':                 { objetivos: ['calma','tolerancia a la frustración','control emocional'],              resultados: ['bajar activación','manejar mejor la frustración','responder sin explotar'] },
+  'protector_preocupado+sombra':        { objetivos: ['seguridad emocional','independencia','confianza'],                      resultados: ['sentirse más seguro','depender menos del dueño','reaccionar menos'] },
+  'independiente+oportunista':          { objetivos: ['conexión','hábitos','autocontrol'],                                     resultados: ['elegir más al dueño','dejar de autorefuerzo','responder mejor en el día a día'] },
+  'genio_selectivo+oportunista':        { objetivos: ['consistencia','hábitos','límites claros'],                              resultados: ['responder en todos los contextos','reducir conductas oportunistas','mejorar control con distracciones'] },
+  'alcalde_amiguero+red_bull':          { objetivos: ['calma','autocontrol social','atención'],                                resultados: ['bajar revoluciones','convivir sin desbordarse','responder mejor cerca de perros y personas'] },
+  'alcalde_amiguero+genio_selectivo':   { objetivos: ['modales','atención','respuesta confiable'],                             resultados: ['saludar con más control','escuchar mejor con distracciones','responder de forma más consistente'] },
+  'dramatico+protector_preocupado':     { objetivos: ['seguridad','regulación emocional','tolerancia a la frustración'],       resultados: ['reaccionar menos','manejar mejor la incomodidad','recuperar la calma más rápido'] },
+  'independiente+protector_preocupado': { objetivos: ['seguridad','conexión','respuestas funcionales'],                        resultados: ['sentirse más seguro','reconectar más con el dueño','responder mejor al entorno'] },
+  'alcalde_amiguero+dramatico':         { objetivos: ['autocontrol social','calma','control emocional'],                       resultados: ['convivir mejor','reducir explosiones por emoción','mantener más estabilidad en grupo'] },
+  'dramatico+genio_selectivo':          { objetivos: ['control emocional','consistencia','respuesta confiable'],               resultados: ['pensar antes de reaccionar','responder mejor con distracciones','ser más estable'] },
+  'red_bull+sombra':                    { objetivos: ['independencia','calma','seguridad emocional'],                          resultados: ['estar más tranquilo','depender menos del dueño','regularse mejor en el día a día'] },
+  'oportunista+red_bull':               { objetivos: ['calma','estructura','autocontrol'],                                     resultados: ['bajar activación','dejar de improvisar conductas problemáticas','tomar mejores decisiones'] },
+};
+
+const CTA_GRUPO = [
+  'Este suele ser el mejor siguiente paso — aunque dependiendo de la intensidad del caso, a veces empezar con sesiones individuales puede ser más adecuado. Eso lo vemos juntos en una breve llamada.',
+  'Para muchos perros este es el siguiente paso ideal. Aunque en algunos casos conviene empezar uno a uno — eso lo vemos rápido en una llamada.',
+];
+
+const CTA_FLEXIBLE = [
+  'En muchos casos este tipo de trabajo es clave — aunque cuando la situación es más intensa, suele ser mejor empezar de forma individual. Eso lo evaluamos juntos en una breve llamada.',
+  'Este suele ser el mejor siguiente paso. Aun así, según el caso, puede ser mejor empezar en grupo o individual — lo definimos contigo después de una breve valoración.',
+];
+
+function buildPreCTA(cat: string, cat2: string | null, mixed: boolean): string {
+  // Determine which objetivos/resultados to use
+  let obj: string[], res: string[];
+
+  if (mixed && cat2) {
+    const comboKey = [cat, cat2].sort().join('+');
+    if (COMBINATIONS[comboKey]) {
+      obj = COMBINATIONS[comboKey].objetivos;
+      res = COMBINATIONS[comboKey].resultados;
+    } else {
+      obj = PROFILE_DATA[cat]?.objetivos ?? [];
+      res = PROFILE_DATA[cat]?.resultados ?? [];
+    }
+  } else {
+    obj = PROFILE_DATA[cat]?.objetivos ?? [];
+    res = PROFILE_DATA[cat]?.resultados ?? [];
+  }
+
+  const preCTA = `Para este perfil, el mejor siguiente paso suele ser un grupo de trabajo enfocado en ${obj[0]}, ${obj[1]} y ${obj[2]}. En nuestras clases en Cuernavaca trabajamos ejercicios prácticos para ayudar a tu perro a ${res[0]}, ${res[1]} y ${res[2]} en situaciones reales.`;
+
+  // CTA variant based on primary intensity
+  const intensity = PROFILE_DATA[cat]?.intensity ?? 'medium';
+  const ctaVariants = intensity === 'high' ? CTA_FLEXIBLE : CTA_GRUPO;
+  const cta = ctaVariants[Math.floor(Math.random() * ctaVariants.length)];
+
+  return `${preCTA}\n\n${cta}`;
+}
+
+// ── VECTORS ───────────────────────────────────────────────────────────────────
 const VECTORS: Record<string, Record<string, number>> = {
   red_bull:             { activacion:5, impulsos:1, sensibilidad:2, social:2, conexion:3, auto_ref:3 },
   alcalde_amiguero:     { activacion:4, impulsos:2, sensibilidad:2, social:1, conexion:3, auto_ref:2 },
@@ -36,7 +99,7 @@ const VECTORS: Record<string, Record<string, number>> = {
   oportunista:          { activacion:3, impulsos:2, sensibilidad:1, social:3, conexion:2, auto_ref:5 },
 };
 
-// ── QUESTIONS — all spelling and punctuation verified ─────────────────────────
+// ── QUESTIONS — all verified ──────────────────────────────────────────────────
 const QUESTIONS = [
   {
     q: (n: string) => `Cuando sales a caminar con ${n}...`,
@@ -59,13 +122,15 @@ const QUESTIONS = [
     ],
   },
   {
+    // Q3 — Answer E updated: separation distress → Sombra scoring
     q: (n: string) => `En casa, ${n} generalmente...`,
     answers: [
       { t: 'Nunca para — siempre está en movimiento.',                    s: { activacion:5, auto_ref:3 } },
       { t: 'Te sigue a todos lados y busca tu atención.',                 s: { conexion:5, activacion:3 } },
       { t: 'Se altera fácil con ruidos o cambios en la rutina.',          s: { sensibilidad:4, activacion:3 } },
       { t: 'Es tranquilo e independiente.',                               s: { conexion:1, activacion:2 } },
-      { t: 'Tiene momentos activos y momentos tranquilos.',               s: { activacion:2, conexion:3 } },
+      // NEW E: separation distress → Sombra (high sensibilidad + high conexion need)
+      { t: 'Cuando se queda solo, le cuesta mucho calmarse o puede romper cosas.', s: { sensibilidad:4, conexion:5 } },
     ],
   },
   {
@@ -94,7 +159,7 @@ const QUESTIONS = [
     q: (n: string) => `Cuando ${n} encuentra comida, un olor o algo interesante en el suelo...`,
     answers: [
       { t: 'Se obsesiona — no hay nada que lo pare.',                    s: { auto_ref:5, impulsos:1 } },
-      { t: 'Lo olfatea un momento y sigue solo — sin buscarte.',
+      { t: 'Lo olfatea un momento y sigue solo — sin buscarte.',         s: { auto_ref:3, conexion:1 } },
       { t: 'Lo ignora — no le llama mucho la atención.',                 s: { auto_ref:1, conexion:3 } },
       { t: 'Se encierra en eso completamente y te ignora por completo.', s: { auto_ref:5, conexion:1 } },
       { t: 'Lo nota, lo investiga un momento y vuelve contigo.',         s: { auto_ref:2, conexion:4 } },
@@ -102,6 +167,7 @@ const QUESTIONS = [
   },
 ];
 
+// ── COPY ──────────────────────────────────────────────────────────────────────
 const COPY: Record<string, any> = {
   red_bull: {
     name: 'Red Bull Dog', emoji: '🔴', energy: 'Explosivo',
@@ -112,7 +178,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Con un plan claro, ${n} puede aprender a regularse — y ese cambio transforma cada salida, cada visita y cada momento en casa.`,
     cta1: (n: string) => `¿Por dónde empiezas con un perro como ${n}?`,
     sub1: 'Cuéntame qué está pasando y te digo qué haría yo primero.',
-    cta2: 'Cuando estés lista para empezar, aquí estoy.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   alcalde_amiguero: {
     name: 'Alcalde Amiguero', emoji: '🟡', energy: 'Intenso',
@@ -123,7 +189,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Cuando ${n} entienda que la calma abre puertas — literalmente — todo cambia para él y para ti.`,
     cta1: (n: string) => `¿Quieres que ${n} aprenda a saludar sin drama?`,
     sub1: 'Escríbeme y hablamos de qué está pasando exactamente.',
-    cta2: 'Este es exactamente el tipo de caso que trabajo en mis clases grupales.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   protector_preocupado: {
     name: 'Protector Preocupado', emoji: '🟠', energy: 'Defensivo',
@@ -134,7 +200,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Este proceso requiere paciencia y un plan claro — pero cuando ${n} empiece a sentirse seguro, los cambios son profundos y duraderos.`,
     cta1: (_n: string) => 'Esto tiene solución — y no requiere corrección ni castigo.',
     sub1: 'Cuéntame qué situaciones lo disparan y por dónde vamos.',
-    cta2: 'Cuando estés lista para ayudar a tu perro a sentirse más seguro.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   dramatico: {
     name: 'Dramático', emoji: '🟣', energy: 'Volátil',
@@ -145,7 +211,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Con el entrenamiento correcto, ${n} puede aprender que no necesita explotar para conseguir lo que quiere.`,
     cta1: (n: string) => `¿Quieres entender qué dispara a ${n} y cómo manejarlo?`,
     sub1: 'Escríbeme y hablamos de qué está pasando exactamente.',
-    cta2: 'Este perfil responde muy bien al entrenamiento correcto.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   independiente: {
     name: 'Independiente', emoji: '🔵', energy: 'Desconectado',
@@ -156,7 +222,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Cuando ${n} descubra que orientarse hacia ti predice cosas buenas, todo lo demás se vuelve mucho más fácil.`,
     cta1: (n: string) => `El recall confiable de ${n} empieza aquí — y es más rápido de lo que crees.`,
     sub1: 'Cuéntame cómo es afuera y por dónde empezamos.',
-    cta2: 'Cuando estés lista para que tu perro te elija — incluso afuera.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   sombra: {
     name: 'Sombra', emoji: '⚫', energy: 'Dependiente',
@@ -167,7 +233,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Un perro con autonomía es más equilibrado, más feliz — y tú puedes moverte por tu casa sin escolta permanente.`,
     cta1: (n: string) => `La independencia de ${n} se entrena — con calma y sin drama.`,
     sub1: 'Escríbeme y hablamos de cómo está siendo esto en casa.',
-    cta2: 'Cuando estés lista para que tu perro — y tú — respiren un poco.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   genio_selectivo: {
     name: 'Genio Selectivo', emoji: '🟢', energy: 'Condicional',
@@ -178,7 +244,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Cuando las reglas sean las mismas en todos lados, ${n} va a dejar de "elegir" — porque la respuesta correcta siempre va a tener valor.`,
     cta1: (n: string) => `Lo que ${n} ya sabe puede funcionar en cualquier lugar.`,
     sub1: 'Cuéntame en qué situaciones te falla y por dónde empezamos.',
-    cta2: 'Cuando estés lista para que tu perro te funcione — también afuera.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
   oportunista: {
     name: 'Oportunista', emoji: '🟤', energy: 'Oportunista',
@@ -189,7 +255,7 @@ const COPY: Record<string, any> = {
     bridge: (n: string) => `Cuando tú seas la fuente más predecible de cosas buenas, ${n} va a preferir trabajar contigo — porque eso también tiene sentido para él.`,
     cta1: (n: string) => `Cambiar la ecuación de ${n} es más directo de lo que parece.`,
     sub1: 'Cuéntame qué conductas te están volviendo loca y empezamos ahí.',
-    cta2: 'Cuando estés lista para que tu perro trabaje contigo, no contra ti.',
+    cta2: (n: string) => `Mike ya sabe cómo ayudar a ${n}.`,
   },
 };
 
@@ -236,13 +302,11 @@ function calcScore(answers: any[]) {
   return { cat: primary, cat2: second, mixed: gap < 0.5, avg };
 }
 
-// ── SHEETS SUBMISSION ─────────────────────────────────────────────────────────
 async function submitToSheets(payload: Record<string, any>) {
   if (!SHEETS_URL || SHEETS_URL.includes('PASTE_YOUR')) return;
   try {
     await fetch(SHEETS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
@@ -260,19 +324,30 @@ const css = `
   .btn-wa { background: #25D366; color: white; border: none; border-radius: 8px; padding: 16px 24px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
   .btn-wa:hover { background: #1FB855; }
   .btn-navy { background: #0F2451; color: white; border: none; border-radius: 8px; padding: 16px 24px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
-  .ans-card { background: white; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; cursor: pointer; font-size: 14px; color: #2D3748; text-align: left; width: 100%; transition: all 0.12s; line-height: 1.5; }
+  .ans-card { background: white; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; cursor: pointer; font-size: 14px; color: #2D3748; text-align: left; width: 100%; transition: all 0.15s; line-height: 1.5; }
   .ans-card:hover { border-color: #0F2451; background: #F7F9FF; }
   .ans-card.sel { background: #0F2451; color: white; border-color: #0F2451; }
-  .input-field { width: 100%; border: 1.5px solid #E2E8F0; border-radius: 8px; padding: 14px 16px; font-size: 16px; outline: none; color: #2D3748; }
+  /* FIX: explicit background + color on all inputs — prevents dark mode browser overrides */
+  .input-field { width: 100%; border: 1.5px solid #E2E8F0; border-radius: 8px; padding: 14px 16px; font-size: 16px; outline: none; color: #2D3748; background: white; }
   .input-field:focus { border-color: #0F2451; }
+  /* DARK MODE: white text on dark background */
+  @media (prefers-color-scheme: dark) {
+    .input-field { background: #1a2a4a; color: white; border-color: #2d4a7a; }
+    .input-field::placeholder { color: rgba(255,255,255,0.45); }
+    select.input-field option { background: #1a2a4a; color: white; }
+  }
   .myth-box { background: #FFF7ED; border-left: 4px solid #2AC400; border-radius: 0 8px 8px 0; padding: 14px 16px; font-style: italic; color: #2D3748; font-size: 14px; line-height: 1.6; }
   .need-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #4A5568; line-height: 1.5; }
   .need-item:last-child { border-bottom: none; }
   .sec-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #2AC400; margin-bottom: 8px; }
   .ghost-btn { background: none; border: none; color: #718096; font-size: 13px; cursor: pointer; padding: 8px 0; }
+  .siguiente-wrap { overflow: hidden; transition: max-height 0.25s ease, opacity 0.25s ease; }
+  .siguiente-wrap.visible { max-height: 80px; opacity: 1; }
+  .siguiente-wrap.hidden { max-height: 0; opacity: 0; }
+  .hint-text { font-size: 12px; color: #718096; font-style: italic; margin-bottom: 14px; padding: 8px 12px; background: #F5F5F4; border-radius: 6px; }
+  .pre-cta-block { background: #F0F7FF; border-left: 4px solid #0F2451; border-radius: 0 8px 8px 0; padding: 16px 18px; margin-bottom: 16px; font-size: 14px; color: #2D3748; line-height: 1.7; }
 `;
 
-// ── COMPONENTS ────────────────────────────────────────────────────────────────
 function ProgBar({ n, total }: { n: number; total: number }) {
   return (
     <div style={{ background: '#E2E8F0', borderRadius: 4, height: 5, width: '100%', overflow: 'hidden' }}>
@@ -291,13 +366,13 @@ function MiniRadar({ avg }: { avg: Record<string, number> }) {
   return (
     <svg viewBox="0 0 220 220" width="100%" style={{ maxWidth: 220, display: 'block', margin: '0 auto' }}>
       {[0.25,0.5,0.75,1].map((f, fi) => {
-        const gp = TRAITS.map((_, i) => { const a = (i/n)*2*Math.PI-Math.PI/2; return `${cx+r*f*Math.cos(a)},${cy+r*f*Math.sin(a)}`; }).join(' ');
+        const gp = TRAITS.map((_, i) => { const a=(i/n)*2*Math.PI-Math.PI/2; return `${cx+r*f*Math.cos(a)},${cy+r*f*Math.sin(a)}`; }).join(' ');
         return <polygon key={fi} points={gp} fill="none" stroke="#E2E8F0" strokeWidth={1} />;
       })}
-      {TRAITS.map((_, i) => { const a = (i/n)*2*Math.PI-Math.PI/2; return <line key={i} x1={cx} y1={cy} x2={cx+r*Math.cos(a)} y2={cy+r*Math.sin(a)} stroke="#E2E8F0" strokeWidth={1} />; })}
+      {TRAITS.map((_, i) => { const a=(i/n)*2*Math.PI-Math.PI/2; return <line key={i} x1={cx} y1={cy} x2={cx+r*Math.cos(a)} y2={cy+r*Math.sin(a)} stroke="#E2E8F0" strokeWidth={1} />; })}
       <polygon points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill="#0F2451" fillOpacity={0.35} stroke="#0F2451" strokeWidth={2} />
       {TRAITS.map((_, i) => {
-        const a = (i/n)*2*Math.PI-Math.PI/2;
+        const a=(i/n)*2*Math.PI-Math.PI/2;
         return <text key={i} x={cx+(r+24)*Math.cos(a)} y={cy+(r+24)*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize={9} fill="#4A5568">{TRAIT_LABELS[i]}</text>;
       })}
     </svg>
@@ -331,44 +406,18 @@ function Testimonial() {
   );
 }
 
-function PhoneCapture({ phone, setPhone }: { phone: string; setPhone: (v: string) => void }) {
-  return (
-    <div style={{ background: WARM, borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-      <p style={{ fontSize: 13, color: NAVY, fontWeight: 600, marginBottom: 8 }}>
-        ¿Quieres que te contacte directamente?
-        <span style={{ fontSize: 12, color: DGREY, fontWeight: 400, marginLeft: 4 }}>(opcional)</span>
-      </p>
-      <input
-        type="tel"
-        placeholder="Tu número de WhatsApp..."
-        value={phone}
-        onChange={e => setPhone(e.target.value)}
-        style={{ width: '100%', border: '1.5px solid #E2E8F0', borderRadius: 8, padding: '12px 14px', fontSize: 15, outline: 'none', color: '#2D3748' }}
-      />
-    </div>
-  );
-}
-
 // ── RESULT BODY ───────────────────────────────────────────────────────────────
-// Layout order (verified):
-// 1. Radar (if showRadar)
-// 2. Primary myth + body
-// 3. Secondary myth + body (mixed only) ← ABOVE combined needs
-// 4. Combined needs list (both profiles merged)
-// 5. Bridge text
-// 6. Phone capture (optional)
-// 7. First CTA (WhatsApp) ← second profile is ABOVE this
-// 8. Credentials + testimonial
-// 9. Second CTA + restart
-function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, setPhone, waUrl }: {
+function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, waUrl, preCTAText }: {
   c: any; c2?: any; dogName: string; avg: Record<string,number>;
   showRadar: boolean; isMixed: boolean; restart: () => void;
-  phone: string; setPhone: (v: string) => void; waUrl: string;
+  waUrl: string; preCTAText: string;
 }) {
-  // Combined needs — deduplicated merge of both profiles
   const combinedNeeds: string[] = isMixed && c2
     ? [...c.needs, ...c2.needs.filter((n: string) => !c.needs.includes(n))]
     : c.needs;
+
+  // Split pre-CTA text into two paragraphs
+  const [preCTAPara, ctaPara] = preCTAText.split('\n\n');
 
   return (
     <>
@@ -381,12 +430,10 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
       )}
 
       <div style={{ padding: '20px 24px 0' }}>
-        {/* PRIMARY myth + body */}
         <p className="sec-label">Lo que está pasando en realidad</p>
         <div className="myth-box" style={{ marginBottom: 14 }}>«{c.myth}»</div>
         <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>{c.body}</p>
 
-        {/* SECONDARY myth + body — ABOVE the needs list and CTA */}
         {isMixed && c2 && (
           <>
             <div className="myth-box" style={{ marginBottom: 14, borderLeftColor: '#92BBE3' }}>«{c2.myth}»</div>
@@ -394,7 +441,6 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
           </>
         )}
 
-        {/* COMBINED needs list */}
         <p className="sec-label">Lo que necesita {dogName}</p>
         <div style={{ marginBottom: 8 }}>
           {combinedNeeds.map((nd: string, i: number) => (
@@ -407,12 +453,15 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
         <p style={{ color: DGREY, fontSize: 14, lineHeight: 1.7, marginTop: 10, marginBottom: 20 }}>{c.bridge(dogName)}</p>
       </div>
 
-      {/* Optional phone capture — before CTA */}
-      <div style={{ padding: '0 24px' }}>
-        <PhoneCapture phone={phone} setPhone={setPhone} />
+      {/* PRE-CTA BLOCK — replaces phone capture, transfers to WhatsApp CTA */}
+      <div style={{ padding: '0 24px 4px' }}>
+        <div className="pre-cta-block">
+          <p style={{ marginBottom: 10 }}>{preCTAPara}</p>
+          <p style={{ fontStyle: 'italic', color: '#4A5568' }}>{ctaPara}</p>
+        </div>
       </div>
 
-      {/* FIRST CTA — WhatsApp */}
+      {/* First CTA */}
       <div style={{ background: NAVY, padding: '24px' }}>
         <h3 style={{ color: 'white', fontSize: 17, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta1(dogName)}</h3>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 16 }}>{c.sub1}</p>
@@ -426,10 +475,10 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
         <Testimonial />
       </div>
 
-      {/* SECOND CTA */}
+      {/* Second CTA */}
       <div style={{ padding: '24px' }}>
-        <h3 style={{ color: NAVY, fontSize: 16, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta2}</h3>
-        <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe a Mike y cuéntale todo.</p>
+        <h3 style={{ color: NAVY, fontSize: 16, fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.cta2(dogName)}</h3>
+        <p style={{ color: DGREY, fontSize: 13, marginBottom: 14 }}>Escribe a WhatsApp y cuéntale todo.</p>
         <a href={waUrl} target="_blank" rel="noreferrer" className="btn-navy">💬 Hablar con Mike</a>
         <button className="ghost-btn" onClick={restart} style={{ width: '100%', textAlign: 'center', marginTop: 8 }}>Empezar de nuevo</button>
       </div>
@@ -439,46 +488,28 @@ function ResultBody({ c, c2, dogName, avg, showRadar, isMixed, restart, phone, s
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [screen, setScreen]       = useState('intro');
-  const [ownerName, setOwnerName] = useState('');
-  const [dogName, setDogName]     = useState('');
-  const [qIndex, setQIndex]       = useState(0);
-  const [answers, setAnswers]     = useState<any[]>([]);
-  const [sel, setSel]             = useState<number | null>(null);
-  const [progress, setProgress]   = useState(0);
-  const [result, setResult]       = useState<any>(null);
-  const [phone, setPhone]         = useState('');
+  const [screen, setScreen]             = useState('intro');
+  const [ownerName, setOwnerName]       = useState('');
+  const [dogName, setDogName]           = useState('');
+  const [dogBreed, setDogBreed]         = useState('');
+  const [dogAge, setDogAge]             = useState('');
+  const [qIndex, setQIndex]             = useState(0);
+  const [answers, setAnswers]           = useState<any[]>([]);
+  const [sel, setSel]                   = useState<number | null>(null);
+  const [pendingAnswer, setPendingAnswer] = useState<any>(null);
+  const [progress, setProgress]         = useState(0);
+  const [result, setResult]             = useState<any>(null);
+  const [preCTAText, setPreCTAText]     = useState('');
 
   const restart = () => {
-    setScreen('intro'); setOwnerName(''); setDogName(''); setQIndex(0);
-    setAnswers([]); setSel(null); setProgress(0); setResult(null); setPhone('');
+    setScreen('intro'); setOwnerName(''); setDogName(''); setDogBreed(''); setDogAge('');
+    setQIndex(0); setAnswers([]); setSel(null); setPendingAnswer(null);
+    setProgress(0); setResult(null); setPreCTAText('');
   };
 
   const canStart = ownerName.trim() && dogName.trim();
+  const waUrl    = buildWAUrl(ownerName, dogName);
 
-  // Build personalized WA URL from quiz data
-  const waUrl = buildWAUrl(ownerName, dogName);
-
-  // Submit phone update when entered on result page
-  useEffect(() => {
-    if (screen === 'result' && phone && result) {
-      submitToSheets({
-        timestamp: new Date().toISOString(),
-        owner_name: ownerName, dog_name: dogName, phone,
-        category: result.cat, category2: result.mixed ? result.cat2 : '—',
-        mixed: result.mixed,
-        activacion: +result.avg.activacion.toFixed(2),
-        impulsos: +result.avg.impulsos.toFixed(2),
-        sensibilidad: +result.avg.sensibilidad.toFixed(2),
-        social: +result.avg.social.toFixed(2),
-        conexion: +result.avg.conexion.toFixed(2),
-        auto_ref: +result.avg.auto_ref.toFixed(2),
-        update: true,
-      });
-    }
-  }, [phone]);
-
-  // Loading — score and submit
   useEffect(() => {
     if (screen !== 'loading') return;
     let p = 0;
@@ -488,16 +519,17 @@ export default function App() {
         clearInterval(iv);
         const res = calcScore(answers);
         setResult(res);
+        const preText = buildPreCTA(res.cat, res.mixed ? res.cat2 : null, res.mixed);
+        setPreCTAText(preText);
         submitToSheets({
           timestamp: new Date().toISOString(),
-          owner_name: ownerName, dog_name: dogName, phone: phone || '—',
+          owner_name: ownerName, dog_name: dogName,
+          dog_breed: dogBreed || '—', dog_age: dogAge || '—',
+          phone: '—',
           category: res.cat, category2: res.mixed ? res.cat2 : '—', mixed: res.mixed,
-          activacion: +res.avg.activacion.toFixed(2),
-          impulsos: +res.avg.impulsos.toFixed(2),
-          sensibilidad: +res.avg.sensibilidad.toFixed(2),
-          social: +res.avg.social.toFixed(2),
-          conexion: +res.avg.conexion.toFixed(2),
-          auto_ref: +res.avg.auto_ref.toFixed(2),
+          activacion: +res.avg.activacion.toFixed(2), impulsos: +res.avg.impulsos.toFixed(2),
+          sensibilidad: +res.avg.sensibilidad.toFixed(2), social: +res.avg.social.toFixed(2),
+          conexion: +res.avg.conexion.toFixed(2), auto_ref: +res.avg.auto_ref.toFixed(2),
         });
         setTimeout(() => setScreen('result'), 300);
       }
@@ -505,15 +537,19 @@ export default function App() {
     return () => clearInterval(iv);
   }, [screen]);
 
-  const handleAnswer = (a: any, idx: number) => {
+  const handleSelect = (a: any, idx: number) => {
     setSel(idx);
-    setTimeout(() => {
-      const na = [...answers, a];
-      setAnswers(na);
-      setSel(null);
-      if (qIndex < QUESTIONS.length - 1) { setQIndex(qIndex + 1); }
-      else { setScreen('loading'); }
-    }, 200);
+    setPendingAnswer(a);
+  };
+
+  const handleSiguiente = () => {
+    if (pendingAnswer === null) return;
+    const na = [...answers, pendingAnswer];
+    setAnswers(na);
+    setSel(null);
+    setPendingAnswer(null);
+    if (qIndex < QUESTIONS.length - 1) { setQIndex(qIndex + 1); }
+    else { setScreen('loading'); }
   };
 
   // ── INTRO ──────────────────────────────────────────────────────────────────
@@ -523,23 +559,42 @@ export default function App() {
       <div className="app" style={{ paddingBottom: 40 }}>
         <div style={{ background: NAVY, padding: '48px 24px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 80, objectFit: 'contain', marginBottom: 32 }} />
-          <h1 style={{ color: 'white', fontSize: 26, fontWeight: 700, lineHeight: 1.3, marginBottom: 14 }}>¿Qué tipo de perro<br />es el tuyo?</h1>
+          <h1 style={{ color: 'white', fontSize: 26, fontWeight: 700, lineHeight: 1.3, marginBottom: 14 }}>¿Qué tipo de perro<br />tienes?</h1>
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 1.7, maxWidth: 300 }}>
             Responde 6 preguntas y descubre qué está pasando realmente con su comportamiento — y por dónde empezar.
           </p>
         </div>
         <div style={{ padding: '28px 24px' }}>
-          <div style={{ marginBottom: 14 }}>
+          {/* Owner name */}
+          <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 6 }}>Tu nombre</label>
             <input className="input-field" type="text" placeholder="¿Cómo te llamas?" value={ownerName}
               onChange={e => setOwnerName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && canStart && setScreen('quiz')} />
           </div>
-          <div style={{ marginBottom: 20 }}>
+          {/* Dog name */}
+          <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 6 }}>¿Cómo se llama tu perro?</label>
             <input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName}
               onChange={e => setDogName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && canStart && setScreen('quiz')} />
+          </div>
+          {/* Dog breed — new */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 6 }}>Raza</label>
+            <input className="input-field" type="text" placeholder="Ej: Labrador, Mestizo, Chihuahua..." value={dogBreed}
+              onChange={e => setDogBreed(e.target.value)} />
+          </div>
+          {/* Dog age — new */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 6 }}>Edad del perro</label>
+            <select className="input-field" value={dogAge} onChange={e => setDogAge(e.target.value)}
+              style={{ appearance: 'auto' }}>
+              <option value="">Selecciona...</option>
+              {Array.from({length: 15}, (_, i) => i + 1).map(n => (
+                <option key={n} value={String(n)}>{n} {n === 1 ? 'año' : 'años'}</option>
+              ))}
+            </select>
           </div>
           <button className="btn-green" onClick={() => canStart && setScreen('quiz')} disabled={!canStart}>
             Empezar ahora →
@@ -563,29 +618,44 @@ export default function App() {
         <div className="app" style={{ paddingBottom: 32 }}>
           <div style={{ background: NAVY, padding: '18px 24px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, minHeight: 28 }}>
-              {qIndex > 0
-                ? <button className="ghost-btn" style={{ color: 'rgba(255,255,255,0.6)' }} onClick={() => { setQIndex(qIndex-1); setAnswers(answers.slice(0,-1)); }}>← Anterior</button>
-                : <div />}
+              {/* Anterior always visible — on page 1 goes back to intro */}
+              <button className="ghost-btn" style={{ color: 'rgba(255,255,255,0.6)' }} onClick={() => {
+                if (qIndex === 0) {
+                  setScreen('intro');
+                } else {
+                  setQIndex(qIndex - 1);
+                  setAnswers(answers.slice(0, -1));
+                  setSel(null);
+                  setPendingAnswer(null);
+                }
+              }}>← Anterior</button>
               <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 26, objectFit: 'contain' }} />
             </div>
             <ProgBar n={qIndex} total={QUESTIONS.length} />
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 5, textAlign: 'right' }}>{qIndex+1} de {QUESTIONS.length}</div>
           </div>
           <div style={{ padding: '20px 24px 24px' }}>
-            <div style={{ fontSize: 16, fontWeight: 600, color: NAVY, lineHeight: 1.5, marginBottom: 18 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: NAVY, lineHeight: 1.5, marginBottom: 14 }}>
               {(q as any).qHighlight
                 ? <>{q.q(dogName)} <span style={{ textDecoration: 'underline', fontWeight: 700 }}>{(q as any).qHighlight}</span>{(q as any).qSuffix}</>
                 : q.q(dogName)}
             </div>
+            {/* Hint text on every question */}
+            <div className="hint-text">Elige la opción que más se acerque a lo que hace {dogName}.</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {q.answers.map((a, i) => (
-                <button key={i} className={`ans-card${sel===i?' sel':''}`} onClick={() => handleAnswer(a, i)}>
+                <button key={i} className={`ans-card${sel===i?' sel':''}`} onClick={() => handleSelect(a, i)}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: sel===i?'rgba(255,255,255,0.6)':GREEN, marginRight: 8 }}>
                     {['A','B','C','D','E'][i]}
                   </span>
                   {a.t}
                 </button>
               ))}
+            </div>
+            <div className={`siguiente-wrap ${sel !== null ? 'visible' : 'hidden'}`} style={{ marginTop: 16 }}>
+              <button className="btn-green" onClick={handleSiguiente} disabled={sel === null}>
+                {qIndex < QUESTIONS.length - 1 ? 'Siguiente →' : 'Ver resultado →'}
+              </button>
             </div>
           </div>
         </div>
@@ -623,11 +693,10 @@ export default function App() {
       <>
         <style>{css}</style>
         <div className="app" style={{ paddingBottom: 48 }}>
-          {/* Header — always centered */}
           <div style={{ background: NAVY, padding: '28px 24px', textAlign: 'center' }}>
             <img src={LOGO_WHITE} alt="Habla Perro" style={{ height: 40, objectFit: 'contain', display: 'block', margin: '0 auto 16px' }} />
             <div style={{ display: 'inline-block', background: 'rgba(42,196,0,0.2)', border: '1px solid rgba(42,196,0,0.4)', borderRadius: 20, padding: '3px 14px', fontSize: 11, color: GREEN, fontWeight: 700, marginBottom: 12 }}>
-              {mixed ? 'PERFIL COMBINADO' : `RESULTADO DE ${dogName.toUpperCase()}`}
+              {mixed ? 'Perfil combinado' : `El perfil de ${dogName}`}
             </div>
             {mixed ? (
               <>
@@ -647,7 +716,6 @@ export default function App() {
             )}
           </div>
 
-          {/* Mixed — profile cards */}
           {mixed && c2 && (
             <div style={{ padding: '20px 24px 0' }}>
               <p className="sec-label">Los dos perfiles de {dogName}</p>
@@ -663,19 +731,16 @@ export default function App() {
             </div>
           )}
 
-          {/* Radar */}
           <div style={{ background: WARM, padding: '20px 24px', marginTop: mixed ? 16 : 0 }}>
             <p className="sec-label">Perfil de {dogName}</p>
             <MiniRadar avg={avg} />
             <p style={{ fontSize: 11, color: '#718096', textAlign: 'center', marginTop: 6 }}>⚠ Impulsos y Control Social: menor puntaje = menos regulación</p>
           </div>
 
-          {/* Result body — second profile ABOVE CTA, combined needs */}
           <ResultBody
             c={c} c2={c2 ?? undefined} dogName={dogName} avg={avg}
             showRadar={false} isMixed={mixed}
-            restart={restart} phone={phone} setPhone={setPhone}
-            waUrl={waUrl}
+            restart={restart} waUrl={waUrl} preCTAText={preCTAText}
           />
         </div>
       </>
