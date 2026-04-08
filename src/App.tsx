@@ -508,26 +508,7 @@ export default function App() {
   const waUrl    = buildWAUrl(ownerName, dogName);
 
   // After result renders: send HTML snapshot to Drive (identical to what client sees)
-  useEffect(() => {
-    if (screen !== 'result' || !result) return;
-    if (!SHEETS_URL || SHEETS_URL.includes('PASTE_YOUR')) return;
-    const timer = setTimeout(() => {
-      try {
-        const appDiv = document.querySelector('.app') as HTMLElement;
-        if (!appDiv) return;
-        const styleEl = document.querySelector('style');
-        const css = styleEl ? (styleEl as HTMLStyleElement).innerText : '';
-        const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Habla Perro — ${dogName}</title><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}${css}</style></head><body>${appDiv.outerHTML}</body></html>`;
-        // Use text/plain so no-cors works (simple request, no preflight)
-        fetch(SHEETS_URL, {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ type: 'html_snapshot', owner_name: ownerName, dog_name: dogName, html }),
-        });
-      } catch (_) { /* silent */ }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [screen, result]);
+  
 
   // Auto-capture result screen as PDF → send to Drive
   useEffect(() => {
