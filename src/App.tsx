@@ -9,13 +9,11 @@ const DGREY = '#4A5568';
 
 const WA_NUM = atob('NTI3Nzc2MTAxNjQ3');
 const buildWAUrl = (ownerName: string, dogName: string) => {
-  const msg = `Hola Mike, soy ${ownerName}. Llené el cuestionario en el EXA Pet Friendly para conocer mejor el carácter de ${dogName} y me gustaría saber más. 🐾`;
+  const msg = `Hola Mike, soy ${ownerName}. Llené el cuestionario para conocer mejor el carácter de ${dogName} y me gustaría saber más. 🐾`;
   return `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`;
 };
 
 const LOGO_WHITE = '/02-HP-Logo-Main-White.png';
-const EXA_EVENT  = '/exa-pet-friendly.webp';
-const EXA_FM     = '/exa-fm-blanco.png';
 const CCPDT_LOGO = '/cpdt-ka-color-med.png';
 const APDT_LOGO  = '/APDT%20logo.png';
 
@@ -200,9 +198,9 @@ function AvisoPrivacidad({dark=false,lead='Al continuar aceptas el tratamiento d
     {open && <div style={{marginTop:10,textAlign:'left',background:dark?'rgba(255,255,255,0.08)':WARM,borderRadius:8,padding:'12px 14px'}}>
       <p style={{fontWeight:700,marginBottom:6,color:strong}}>Aviso de privacidad</p>
       <p style={{marginBottom:6}}>Habla Perro — Escuela Canina Humana, con domicilio en Cuernavaca, Morelos, es responsable del tratamiento de tus datos personales.</p>
-      <p style={{marginBottom:6}}><b>Qué recabamos:</b> tu nombre, los datos de tu perro (nombre, raza, edad) y tus respuestas del cuestionario.</p>
-      <p style={{marginBottom:6}}><b>Para qué:</b> únicamente para generar tu resultado de carácter y, si tú nos escribes por WhatsApp, para darte seguimiento sobre nuestros programas de entrenamiento.</p>
-      <p style={{marginBottom:6}}><b>Con quién los compartimos:</b> con nadie. Tus datos son de uso interno de Habla Perro y no se comparten con EXA FM ni con ningún otro tercero, ni se venden con fines publicitarios. Se guardan en servicios de Google (Drive y Hojas de cálculo), que usamos como herramienta de trabajo.</p>
+      <p style={{marginBottom:6}}><b>Qué recabamos:</b> tu nombre, tu número de WhatsApp, los datos de tu perro (nombre, raza, edad) y tus respuestas del cuestionario.</p>
+      <p style={{marginBottom:6}}><b>Para qué:</b> para generar tu resultado de carácter, enviártelo por WhatsApp y darte seguimiento sobre nuestros programas de entrenamiento. No te vamos a llamar sin que tú escribas primero.</p>
+      <p style={{marginBottom:6}}><b>Con quién los compartimos:</b> con nadie. Tus datos son de uso interno de Habla Perro y no se comparten con ningún tercero, ni se venden con fines publicitarios. Se guardan en servicios de Google (Drive y Hojas de cálculo), que usamos como herramienta de trabajo.</p>
       <p><b>Tus derechos:</b> puedes solicitar el acceso, la rectificación, la cancelación o la oposición al uso de tus datos (derechos ARCO), así como revocar tu consentimiento, escribiendo a info@hablaperro.com.</p>
     </div>}
   </div>;
@@ -236,8 +234,9 @@ export default function App() {
   const [progress,setProgress]=useState(0);
   const [result,setResult]=useState<any>(null);
   const [preCTAText,setPreCTAText]=useState('');
+  const [phone,setPhone]=useState('');
 
-  const restart=()=>{setScreen('intro');setOwnerName('');setDogName('');setDogBreed('');setDogAge('');setQIndex(0);setAnswers([]);setSel(null);setPendingAnswer(null);setProgress(0);setResult(null);setPreCTAText('');};
+  const restart=()=>{setScreen('intro');setOwnerName('');setDogName('');setDogBreed('');setDogAge('');setQIndex(0);setAnswers([]);setSel(null);setPendingAnswer(null);setProgress(0);setResult(null);setPreCTAText('');setPhone('');};
   const canStart=ownerName.trim()&&dogName.trim();
   const waUrl=buildWAUrl(ownerName,dogName);
 
@@ -268,18 +267,38 @@ export default function App() {
       if(p>=100){clearInterval(iv); const res=calcScore(answers); setResult(res);
         const preText=buildPreCTA(res.cat,res.mixed?res.cat2:null,res.mixed); setPreCTAText(preText);
         const answer_texts=answers.map((a,i)=>({q:Q_LABELS[i]||`Pregunta ${i+1}`,a:a.t}));
-        submitToSheets({ timestamp:new Date().toISOString(), owner_name:ownerName, dog_name:dogName, dog_breed:dogBreed||'—', dog_age:dogAge||'—', phone:'—', category:res.cat, category2:res.mixed?res.cat2:'—', mixed:res.mixed, activacion:+res.avg.activacion.toFixed(2), impulsos:+res.avg.impulsos.toFixed(2), sensibilidad:+res.avg.sensibilidad.toFixed(2), social:+res.avg.social.toFixed(2), conexion:+res.avg.conexion.toFixed(2), auto_ref:+res.avg.auto_ref.toFixed(2), answer_texts });
+        submitToSheets({ timestamp:new Date().toISOString(), owner_name:ownerName, dog_name:dogName, dog_breed:dogBreed||'—', dog_age:dogAge||'—', phone:phone.replace(/\D/g,'')||'—', category:res.cat, category2:res.mixed?res.cat2:'—', mixed:res.mixed, activacion:+res.avg.activacion.toFixed(2), impulsos:+res.avg.impulsos.toFixed(2), sensibilidad:+res.avg.sensibilidad.toFixed(2), social:+res.avg.social.toFixed(2), conexion:+res.avg.conexion.toFixed(2), auto_ref:+res.avg.auto_ref.toFixed(2), answer_texts });
         setTimeout(()=>setScreen('result'),300);
       }
     },30); return ()=>clearInterval(iv);
   },[screen]);
 
   const handleSelect=(a:any,idx:number)=>{setSel(idx);setPendingAnswer(a);};
-  const handleSiguiente=()=>{if(pendingAnswer===null)return;const na=[...answers,pendingAnswer];setAnswers(na);setSel(null);setPendingAnswer(null);if(qIndex<QUESTIONS.length-1){setQIndex(qIndex+1);}else{setScreen('loading');}};
+  const handleSiguiente=()=>{if(pendingAnswer===null)return;const na=[...answers,pendingAnswer];setAnswers(na);setSel(null);setPendingAnswer(null);if(qIndex<QUESTIONS.length-1){setQIndex(qIndex+1);}else{setScreen('phone');}};
 
-  if(screen==='intro') return <><style>{css}</style><div className="app" style={{paddingBottom:40}}><div style={{background:NAVY,padding:'36px 24px 40px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}><img src={EXA_EVENT} alt="EXA Pet Friendly" style={{height:150,objectFit:'contain',marginBottom:18}}/><p style={{color:'rgba(255,255,255,0.5)',fontSize:10,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',marginBottom:14}}>Presentado por</p><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:30}}><img src={EXA_FM} alt="EXA FM 95.7" style={{height:52,objectFit:'contain'}}/><span style={{width:1,height:38,background:'rgba(255,255,255,0.22)'}}/><img src={LOGO_WHITE} alt="Habla Perro" style={{height:44,objectFit:'contain'}}/></div><h1 style={{color:'white',fontSize:26,fontWeight:700,lineHeight:1.3,marginBottom:14}}>¿Por qué tu perro<br/>se comporta así?</h1><p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.7,maxWidth:320}}>En menos de 2 minutos vas a entender qué está pasando con tu perro y qué puedes hacer al respecto.</p></div><div style={{padding:'28px 24px'}}><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Tu nombre</label><input className="input-field" type="text" placeholder="¿Cómo te llamas?" value={ownerName} onChange={e=>setOwnerName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>¿Cómo se llama tu perro?</label><input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName} onChange={e=>setDogName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Raza</label><input className="input-field" type="text" placeholder="Ej: Labrador, Mestizo, Chihuahua..." value={dogBreed} onChange={e=>setDogBreed(e.target.value)}/></div><div style={{marginBottom:20}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Edad del perro</label><select className="input-field" value={dogAge} onChange={e=>setDogAge(e.target.value)} style={{appearance:'auto'}}><option value="">Selecciona...</option>{Array.from({length:15},(_,i)=>i+1).map(n=><option key={n} value={String(n)}>{n} {n===1?'año':'años'}</option>)}</select></div><button className="btn-green" onClick={()=>canStart&&setScreen('quiz')} disabled={!canStart}>Empezar ahora →</button><p style={{textAlign:'center',fontSize:12,color:'#718096',marginTop:12}}>6 preguntas · 2 minutos · resultado inmediato</p><div style={{marginTop:24,padding:'14px 16px',background:WARM,borderRadius:10,display:'flex',alignItems:'center',gap:12}}><img src={CCPDT_LOGO} alt="CCPDT" style={{height:36,objectFit:'contain',flexShrink:0}}/><p style={{fontSize:12,color:DGREY,lineHeight:1.5}}>Certificado por el consejo internacional<br/>de entrenadores profesionales</p></div><div style={{marginTop:16}}><AvisoPrivacidad/></div></div></div></>;
+  if(screen==='intro') return <><style>{css}</style><div className="app" style={{paddingBottom:40}}><div style={{background:NAVY,padding:'36px 24px 40px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}><img src={LOGO_WHITE} alt="Habla Perro" style={{height:56,objectFit:'contain',marginBottom:28}}/><h1 style={{color:'white',fontSize:26,fontWeight:700,lineHeight:1.3,marginBottom:14}}>¿Por qué tu perro<br/>se comporta así?</h1><p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.7,maxWidth:320}}>En menos de 2 minutos vas a entender qué está pasando con tu perro y qué puedes hacer al respecto.</p></div><div style={{padding:'28px 24px'}}><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Tu nombre</label><input className="input-field" type="text" placeholder="¿Cómo te llamas?" value={ownerName} onChange={e=>setOwnerName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>¿Cómo se llama tu perro?</label><input className="input-field" type="text" placeholder="Escribe su nombre..." value={dogName} onChange={e=>setDogName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&canStart&&setScreen('quiz')}/></div><div style={{marginBottom:12}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Raza</label><input className="input-field" type="text" placeholder="Ej: Labrador, Mestizo, Chihuahua..." value={dogBreed} onChange={e=>setDogBreed(e.target.value)}/></div><div style={{marginBottom:20}}><label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Edad del perro</label><select className="input-field" value={dogAge} onChange={e=>setDogAge(e.target.value)} style={{appearance:'auto'}}><option value="">Selecciona...</option>{Array.from({length:15},(_,i)=>i+1).map(n=><option key={n} value={String(n)}>{n} {n===1?'año':'años'}</option>)}</select></div><button className="btn-green" onClick={()=>canStart&&setScreen('quiz')} disabled={!canStart}>Empezar ahora →</button><p style={{textAlign:'center',fontSize:12,color:'#718096',marginTop:12}}>6 preguntas · 2 minutos · resultado inmediato</p><div style={{marginTop:24,padding:'14px 16px',background:WARM,borderRadius:10,display:'flex',alignItems:'center',gap:12}}><img src={CCPDT_LOGO} alt="CPDT-KA" style={{height:36,objectFit:'contain',flexShrink:0}}/><p style={{fontSize:12,color:DGREY,lineHeight:1.5}}>Certificado por el consejo internacional<br/>de entrenadores profesionales</p></div><div style={{marginTop:16}}><AvisoPrivacidad/></div></div></div></>;
 
   if(screen==='quiz'){const q=QUESTIONS[qIndex];return <><style>{css}</style><div className="app" style={{paddingBottom:32}}><div style={{background:NAVY,padding:'18px 24px 20px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,minHeight:28}}><button className="ghost-btn" style={{color:'rgba(255,255,255,0.6)'}} onClick={()=>{if(qIndex===0){setScreen('intro');}else{setQIndex(qIndex-1);setAnswers(answers.slice(0,-1));setSel(null);setPendingAnswer(null);}}}>← Anterior</button><img src={LOGO_WHITE} alt="Habla Perro" style={{height:26,objectFit:'contain'}}/></div><ProgBar n={qIndex} total={QUESTIONS.length}/><div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:5,textAlign:'right'}}>{qIndex+1} de {QUESTIONS.length}</div></div><div style={{padding:'20px 24px 24px'}}><div style={{fontSize:16,fontWeight:600,color:NAVY,lineHeight:1.5,marginBottom:14}}>{(q as any).qHighlight ? <>{q.q(dogName)} <span style={{textDecoration:'underline',fontWeight:700}}>{(q as any).qHighlight}</span>{(q as any).qSuffix}</> : q.q(dogName)}</div><div className="hint-text">Elige la opción que más se acerque a lo que hace {dogName}.</div><div style={{display:'flex',flexDirection:'column',gap:10}}>{q.answers.map((a,i)=><button key={i} className={`ans-card${sel===i?' sel':''}`} onClick={()=>handleSelect(a,i)}><span style={{fontSize:12,fontWeight:700,color:sel===i?'rgba(255,255,255,0.6)':GREEN,marginRight:8}}>{['A','B','C','D','E'][i]}</span>{a.t}</button>)}</div><div className={`siguiente-wrap ${sel!==null?'visible':'hidden'}`} style={{marginTop:16}}><button className="btn-green" onClick={handleSiguiente} disabled={sel===null}>{qIndex<QUESTIONS.length-1?'Siguiente →':'Ver resultado →'}</button></div></div></div></>;}
+
+  if(screen==='phone') return <><style>{css}</style><div className="app" style={{paddingBottom:40}}>
+    <div style={{background:NAVY,padding:'28px 24px 32px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
+      <img src={LOGO_WHITE} alt="Habla Perro" style={{height:40,objectFit:'contain',marginBottom:20}}/>
+      <h1 style={{color:'white',fontSize:22,fontWeight:700,lineHeight:1.35,marginBottom:12}}>Listo. Tu resultado<br/>está calculado.</h1>
+      <p style={{color:'rgba(255,255,255,0.75)',fontSize:14,lineHeight:1.7,maxWidth:320}}>Déjame tu WhatsApp y te mando el resultado de {dogName} también por ahí, para que lo tengas guardado.</p>
+    </div>
+    <div style={{padding:'28px 24px'}}>
+      <div style={{marginBottom:16}}>
+        <label style={{display:'block',fontSize:13,fontWeight:600,color:NAVY,marginBottom:6}}>Tu WhatsApp</label>
+        <input className="input-field" type="tel" inputMode="numeric" autoComplete="tel" placeholder="10 dígitos, ej. 777 123 4567"
+          value={phone}
+          onChange={e=>setPhone(e.target.value.replace(/[^\d\s]/g,'').slice(0,13))}
+          onKeyDown={e=>{if(e.key==='Enter'&&phone.replace(/\D/g,'').length===10)setScreen('loading');}}/>
+      </div>
+      <button className="btn-green" onClick={()=>setScreen('loading')} disabled={phone.replace(/\D/g,'').length!==10}>Ver el resultado de {dogName} →</button>
+      <p style={{textAlign:'center',fontSize:12,color:DGREY,marginTop:12,lineHeight:1.6}}>No compartimos tu número con nadie<br/>y no te llamamos sin que tú escribas primero.</p>
+      <div style={{marginTop:20}}><AvisoPrivacidad/></div>
+    </div>
+  </div></>;
 
   if(screen==='loading') return <><style>{css}</style><div className="app" style={{background:NAVY,justifyContent:'center',alignItems:'center',padding:'40px 24px',minHeight:'100vh'}}><div style={{textAlign:'center'}}><img src={LOGO_WHITE} alt="Habla Perro" style={{height:52,objectFit:'contain',marginBottom:28}}/><h2 style={{color:'white',fontSize:20,fontWeight:600,marginBottom:8,lineHeight:1.4}}>Analizando el perfil<br/>de {dogName}...</h2><p style={{color:'rgba(255,255,255,0.6)',fontSize:13,lineHeight:1.6,maxWidth:260,margin:'0 auto 28px'}}>Cada perro tiene su propio patrón. Estamos encontrando el de {dogName}.</p><div style={{background:'rgba(255,255,255,0.15)',borderRadius:4,height:4,width:260,overflow:'hidden'}}><div style={{background:GREEN,height:'100%',width:`${progress}%`,transition:'width 0.03s linear'}}/></div></div></div></>;
 
